@@ -1,0 +1,22 @@
+[versions]
+# https://plugins.gradle.org/plugin/com.gradle.develocity
+gradle-develocity = "3.17.6"
+# https://github.com/Kotlin/kotlinx.serialization/releases
+kotlinx-serializationJson = "1.6.3"
+# https://github.com/ktorio/ktor/releases
+ktor = "2.3.12"
+# https://github.com/OpenAPITools/openapi-generator/releases
+openapi-generator = "7.3.0"
+
+[libraries]
+gradle-develocity = { module = "com.gradle:develocity-gradle-plugin", version.ref = "gradle-develocity" }
+kotlinx-serializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serializationJson" }
+ktor-client-auth = { group = "io.ktor", name = "ktor-client-auth", version.ref = "ktor" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
+ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinxJson = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+[plugins]
+openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }

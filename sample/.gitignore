@@ -1,0 +1,19 @@
+build
+bin
+gen
+captures
+local.properties
+/*/build.xml
+/*/tests/build.xml
+.DS_Store
+*/usage.txt
+*/dump.txt
+
+# Android Studio
+/.idea/*
+!/.idea/codeStyles
+!/.idea/runConfigurations/
+.gradle
+gradle/wrapper
+*.iws
+*.iml
