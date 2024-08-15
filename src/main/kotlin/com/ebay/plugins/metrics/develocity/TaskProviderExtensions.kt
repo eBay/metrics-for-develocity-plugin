@@ -47,22 +47,22 @@ fun TaskProvider<out MetricSummarizerTask>.inputsFromDuration(
 /**
  * Get the internal extension for a given project.
  */
-private fun Project.internalExt(): DevelocityMetricsInternalExtension {
+private fun Project.internalExt(): MetricsForDevelocityInternalExtension {
     /*
      * NOTE: This is a bit of a project isolation violation.  We could likely avoid this if task
      * rules applied to programmatically created tasks as well as those created on the command
      * line.  This works for now...
      */
     // NTVARCH-20906: This violates project isolation
-    val ext = project.rootProject.extensions.getByType(DevelocityMetricsExtension::class.java)
-    return ext.extensions.getByType(DevelocityMetricsInternalExtension::class.java)
+    val ext = project.rootProject.extensions.getByType(MetricsForDevelocityExtension::class.java)
+    return ext.extensions.getByType(MetricsForDevelocityInternalExtension::class.java)
 }
 
 /**
  * Common helper configuration for tasks which consume the summarizer output.
  */
 private fun TaskProvider<out MetricSummarizerTask>.configureInputs(
-    inputTask: TaskProvider<out DevelocityMetricsIntermediateTask>,
+    inputTask: TaskProvider<out MetricsIntermediateTask>,
     summarizerId: String,
 ) {
     configure { self ->

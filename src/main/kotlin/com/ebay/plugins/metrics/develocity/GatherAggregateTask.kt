@@ -24,10 +24,10 @@ import javax.inject.Inject
 @CacheableTask
 open class GatherAggregateTask @Inject constructor(
     private val objectFactory: ObjectFactory,
-): DefaultTask(), DevelocityMetricsIntermediateTask {
+): DefaultTask(), MetricsIntermediateTask {
     /**
      * The set of source directories to aggregate.  Each directory added to this collection
-     * should be an output directory of a [DevelocityMetricsIntermediateTask] instance.
+     * should be an output directory of a [MetricsIntermediateTask] instance.
      */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NONE)
@@ -41,7 +41,7 @@ open class GatherAggregateTask @Inject constructor(
     val zoneOffset: Property<String> = objectFactory.property(String::class.java)
 
     @get:Internal
-    override val summarizersProperty: ListProperty<DevelocityMetricSummarizer<*>> = objectFactory.listProperty(DevelocityMetricSummarizer::class.java)
+    override val summarizersProperty: ListProperty<MetricSummarizer<*>> = objectFactory.listProperty(MetricSummarizer::class.java)
 
     @get:OutputDirectory
     override val outputDirectoryProperty: DirectoryProperty = objectFactory.directoryProperty()

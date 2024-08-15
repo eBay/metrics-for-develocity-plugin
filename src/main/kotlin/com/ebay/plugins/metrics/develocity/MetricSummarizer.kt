@@ -8,7 +8,7 @@ import org.gradle.api.file.RegularFile
  * Build data summarizer which can be used to process build data into an intermediate form,
  * allowing the data to be aggregated/reduced over windows of time.
  */
-abstract class DevelocityMetricSummarizer<Intermediate> {
+abstract class MetricSummarizer<Intermediate> {
     /**
      * A unique identifier for the summarizer.  This will also become the filename for the intermediate
      * data file within the output directory of the metric gathering and aggregation tasks.

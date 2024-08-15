@@ -14,7 +14,7 @@ gradlePlugin {
     plugins {
         create("metricsForDevelocity") {
             id = "com.ebay.metrics-for-develocity"
-            implementationClass = "com.ebay.plugins.metrics.develocity.DevelocityMetricsPlugin"
+            implementationClass = "com.ebay.plugins.metrics.develocity.MetricsForDevelocityPlugin"
         }
     }
 }

@@ -37,7 +37,7 @@ import kotlin.time.toJavaDuration
 /**
  * Gradle shared build service implementation which provides access to the Develocity API.
  *
- * This allows for the HTTP client to be centrally managed, centrally mananaging request
+ * This allows for the HTTP client to be centrally managed, centrally managing request
  * parallelism.
  */
 abstract class DevelocityBuildService @Inject constructor(

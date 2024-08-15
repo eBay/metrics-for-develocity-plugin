@@ -22,7 +22,7 @@ The plugin is designed to work with Gradle 8.8 or later.
 To configure the plugin, add the following to your root project's `build.gradle.kts` file:
 
 ```kotlin
-extensions.configure<DevelocityMetricsExtension> {
+extensions.configure<MetricsForDevelocityExtension> {
     develocity {
         // Optional: Set the timezone ID which should be used to define day boundaries.  Defaults
         // to the system's default timezone.
@@ -62,13 +62,13 @@ For local development, the Develocity access token can be acquired by running th
 
 To cause the builds to be queried and summarizers to run, Gradle task rules have been created
 which use the following forms:
-- `develocityMetrics-<datetime>` Examples:
-  - `develocityMetrics-2024-06-01`: Queries all builds for 2024-06-01.
-  - `develocityMetrics-2024-06-01T04`: Queries all builds which started 4AM <= X < 5AM of 2024-06-01.
-- `develocityMetrics-last-<duration>` Examples:
-  - `develocityMetrics-last-P7D`: Queries all builds for the last 7 days.
-  - `develocityMetrics-last-PT8H`: Queries all builds for the last 8 hours.
-  - `develocityMetrics-last-P2DT8H`: Queries all builds within the last 2 days and 8 hours.
+- `metricsForDevelocity-<datetime>` Examples:
+  - `metricsForDevelocity-2024-06-01`: Queries all builds for 2024-06-01.
+  - `metricsForDevelocity-2024-06-01T04`: Queries all builds which started 4AM <= X < 5AM of 2024-06-01.
+- `metricsForDevelocity-last-<duration>` Examples:
+  - `metricsForDevelocity-last-P7D`: Queries all builds for the last 7 days.
+  - `metricsForDevelocity-last-PT8H`: Queries all builds for the last 8 hours.
+  - `metricsForDevelocity-last-P2DT8H`: Queries all builds within the last 2 days and 8 hours.
   NOTE: When running queries which span multiple days, the plugin will automatically adjust the
   starting point to the beginning of the day if the start day is 7 days or more in the past.
 

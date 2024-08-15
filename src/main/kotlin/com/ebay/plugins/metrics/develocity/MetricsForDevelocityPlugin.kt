@@ -18,7 +18,7 @@ import javax.inject.Inject
  * generate aggregate metric data based upon Develocity build scans.
  */
 @Suppress("unused") // False positive
-internal class DevelocityMetricsPlugin @Inject constructor(
+internal class MetricsForDevelocityPlugin @Inject constructor(
     private val providerFactory: ProviderFactory
 ) : Plugin<Project> {
 
@@ -29,7 +29,7 @@ internal class DevelocityMetricsPlugin @Inject constructor(
         }
 
         // Create the extension which will be used to configure the plugin behavior
-        val ext = project.extensions.create(EXTENSION_NAME, DevelocityMetricsExtension::class.java)
+        val ext = project.extensions.create(EXTENSION_NAME, MetricsForDevelocityExtension::class.java)
             .apply {
                 zoneId.convention(ZoneId.systemDefault().id)
                 develocityMaxConcurrency.convention(24)
@@ -54,7 +54,7 @@ internal class DevelocityMetricsPlugin @Inject constructor(
 
         // Register the build service used to query Develocity for build data
         val buildServiceProvider = project.gradle.sharedServices.registerIfAbsent(
-            "develocityMetricsBuildService",
+            "metricsForDevelocityBuildService",
             DevelocityBuildService::class.java
         ) { spec ->
             with(spec.parameters) {
@@ -221,7 +221,7 @@ internal class DevelocityMetricsPlugin @Inject constructor(
                         with(task) {
                             inputTaskProviders.forEach { taskProvider ->
                                 sourceOutputDirectories.from(taskProvider.flatMap {
-                                    if (it is DevelocityMetricsIntermediateTask) {
+                                    if (it is MetricsIntermediateTask) {
                                         it.outputDirectoryProperty
                                     } else {
                                         throw IllegalStateException("Unexpected task type: ${it::class.java}")
@@ -254,7 +254,7 @@ internal class DevelocityMetricsPlugin @Inject constructor(
 
         ext.extensions.create(
             INTERNAL_EXTENSION_NAME,
-            DevelocityMetricsInternalExtension::class.java,
+            MetricsForDevelocityInternalExtension::class.java,
             registerHourly,
             registerDaily,
             registerDurationAggregation,
@@ -310,24 +310,24 @@ internal class DevelocityMetricsPlugin @Inject constructor(
     }
 
     companion object {
-        const val EXTENSION_NAME = "develocityMetrics"
-        const val INTERNAL_EXTENSION_NAME = "develocityMetricsInternal"
-        const val TASK_PREFIX = "develocityMetrics"
+        const val EXTENSION_NAME = "metricsForDevelocity"
+        const val INTERNAL_EXTENSION_NAME = "metricsForDevelocityInternal"
+        const val TASK_PREFIX = "metricsForDevelocity"
         const val TASK_GROUP = "develocity metrics"
-        const val QUERY_FILTER_PROPERTY = "develocityMetricsQueryFilter"
+        const val QUERY_FILTER_PROPERTY = "metricsForDevelocityQueryFilter"
 
         private val DATETIME_TASK_PATTERN = Regex(
             // Examples:
-            //      develocityMetrics-2024-06-01
-            //      develocityMetrics-2024-06-01T05
+            //      metricsForDevelocity-2024-06-01
+            //      metricsForDevelocity-2024-06-01T05
             "^\\Q$TASK_PREFIX-\\E((\\d{4}-\\d{2}-\\d{2})(?:T(\\d{2}))?)$"
         ).toPattern()
 
         private val DURATION_TASK_PATTERN = Regex(
             // Examples:
-            //      develocityMetrics-last-P7D
-            //      develocityMetrics-last-PT8H
-            //      develocityMetrics-last-P2DT8H
+            //      metricsForDevelocity-last-P7D
+            //      metricsForDevelocity-last-PT8H
+            //      metricsForDevelocity-last-P2DT8H
             "^\\Q$TASK_PREFIX-last-\\E(\\w+)$"
         ).toPattern()
     }

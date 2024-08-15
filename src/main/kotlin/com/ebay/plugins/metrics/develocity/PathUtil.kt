@@ -10,7 +10,7 @@ import org.gradle.api.provider.Provider
  * Utility to help consolidate all path-related logic for the develocity metrics plugin.
  */
 object PathUtil {
-    private fun summarizerFileName(summarizer: DevelocityMetricSummarizer<*>) = summarizer.id
+    private fun summarizerFileName(summarizer: MetricSummarizer<*>) = summarizer.id
 
     /**
      * The base directory of all daily tasks.
@@ -52,7 +52,7 @@ object PathUtil {
      */
     fun hourlySummarizerOutputFile(
         hourlyDir: Directory,
-        summarizer: DevelocityMetricSummarizer<*>,
+        summarizer: MetricSummarizer<*>,
     ): RegularFile = summarizerFile(hourlyDir, summarizer)
 
     /**
@@ -78,7 +78,7 @@ object PathUtil {
      */
     fun summarizerFile(
         directory: Directory,
-        summarizer: DevelocityMetricSummarizer<*>
+        summarizer: MetricSummarizer<*>
     ): RegularFile = directory.file(summarizerFileName(summarizer))
 
     /**
@@ -90,5 +90,5 @@ object PathUtil {
         summarizerId: String
     ): Provider<RegularFile> = directory.file(summarizerId)
 
-    private const val BASE_DIR = "develocity-metrics"
+    private const val BASE_DIR = "metricsForDevelocity"
 }

@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference
  * calls made to a single sumamrizer into a single class.
  */
 internal class MetricSummarizerState<T>(
-    val summarizer: DevelocityMetricSummarizer<T>,
+    val summarizer: MetricSummarizer<T>,
 ) {
     private val stateRef = AtomicReference<T>()
 

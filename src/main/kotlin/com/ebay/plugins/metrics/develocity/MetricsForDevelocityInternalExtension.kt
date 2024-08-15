@@ -6,7 +6,7 @@ import org.gradle.api.tasks.TaskProvider
  * Gradle extension used to expose plugin internals to the task providers used by the
  * end user.
  */
-internal open class DevelocityMetricsInternalExtension(
+internal open class MetricsForDevelocityInternalExtension(
     private val hourlyTaskProvider: (timeSpec: String) -> TaskProvider<GatherHourlyTask>,
     private val dailyTaskProvider: (timeSpec: String) -> TaskProvider<GatherAggregateTask>,
     private val durationTaskProvider: (durationSpec: String) -> TaskProvider<GatherAggregateTask>,

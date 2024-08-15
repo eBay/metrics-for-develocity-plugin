@@ -19,7 +19,7 @@ project.tasks.withType(KotlinJvmCompile::class.java) {
     }
 }
 
-develocityMetrics {
+metricsForDevelocity {
     // The following could be used to change the time zone used by the plugin:
     // zoneId.set("UTC")
 

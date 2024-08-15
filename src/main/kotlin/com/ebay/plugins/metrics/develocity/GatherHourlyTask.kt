@@ -35,7 +35,7 @@ import javax.inject.Inject
 @CacheableTask
 open class GatherHourlyTask @Inject constructor(
     objectFactory: ObjectFactory,
-): DefaultTask(), DevelocityMetricsIntermediateTask {
+): DefaultTask(), MetricsIntermediateTask {
     /**
      * The start time of the hour to gather data for, in milliseconds since the epoch.
      */
@@ -72,7 +72,7 @@ open class GatherHourlyTask @Inject constructor(
         DevelocityService::class.java)
 
     @get:Internal
-    override val summarizersProperty: ListProperty<DevelocityMetricSummarizer<*>> = objectFactory.listProperty(DevelocityMetricSummarizer::class.java)
+    override val summarizersProperty: ListProperty<MetricSummarizer<*>> = objectFactory.listProperty(MetricSummarizer::class.java)
 
     @get:OutputDirectory
     override val outputDirectoryProperty: DirectoryProperty = objectFactory.directoryProperty()

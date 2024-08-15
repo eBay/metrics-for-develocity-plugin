@@ -5,9 +5,9 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 
 /**
- * Gradle extension used to configure the [DevelocityMetricsPlugin].
+ * Gradle extension used to configure the [MetricsForDevelocityPlugin].
  */
-abstract class DevelocityMetricsExtension : ExtensionAware {
+abstract class MetricsForDevelocityExtension : ExtensionAware {
     /**
      * The zone ID to use for reporting purposes.  The time zone provided controls the boundaries
      * of what is considered to be the "current day".  By default, assumes the system's time zone.
@@ -47,5 +47,5 @@ abstract class DevelocityMetricsExtension : ExtensionAware {
      * of the build that are important to report upon and summarize them in a way that can
      * be aggregated/reduced.
      */
-    abstract val summarizers: ListProperty<DevelocityMetricSummarizer<*>>
+    abstract val summarizers: ListProperty<MetricSummarizer<*>>
 }
