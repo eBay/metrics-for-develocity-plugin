@@ -13,3 +13,6 @@ jobs:
         uses: gradle/gradle-build-action@v2
       - name: Build Plugin
         run: ./gradlew build
+      - name: Build Sample
+        working-directory: sample
+        run: ./gradlew build
