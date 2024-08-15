@@ -1,69 +1,89 @@
 # Metrics for Develocity Plugin
 
-## Design Overview
+## About This Project
 
-The data processing pipeline is split into two main elements:
-- Data gathering and aggregation
-- Data consumption / reporting
+The Metrics for Develocity Plugin is a Gradle plugin designed to query a
+[Develocity](https://gradle.com/develocity/) server for build data, aggregating this data
+in an extensible manner to allow for data gathering and reporting.
 
-### Data gathering tasks:
+## Background
 
-The purpose of the data gathering tasks is to collect data from the Develocity API and
-aggregate it into summaries that can be used for reporting.  The data for this stage must be
-defined such that it can be accumulated over time through a reduction operation, adding the
-results of one build to the results of the next, etc..  The data collected in this stage can
-be thought of as an intermediate format, not intended for direct consumption.
+To better understand why this plugin exists and how it works, the following documents
+may be referenced:
+- [Motivation](docs/Motivation.md): Why the plugin was created and the problems it solves
+- [Design Overview](docs/Design.md): High level overview of how the plugin functions
 
-Multiple summaries can be created as a result of this stage of processing.  Summarizers are
-registered with the plugin and have the responsibility of processing the raw build data
-and producing the intermediate data format.
+## Requirements
 
-Hourly tasks
-- Query the Develocity server for list of builds within the hour
-- For each configured summarizer:
-  - Process each build and produce a summary file
-  - reduces the summaries together, persisting them to disk by ID
+The plugin is designed to work with Gradle 8.8 or later.
 
-Daily tasks
-  - Depends upon the outputs of hourly tasks for the configured day
-  - For each configured summarizer:
-    - Loads the hourly summary files 
-    - reduces the summaries together, persisting them to disk by ID 
+## Usage
 
-Time window tasks (e.g., last 7 days)
-- Depends upon the outputs of hourly and/or daily tasks to satisfy the requested time window
-- For each configured summarizer:
-  - Loads the hourly summary files
-  - reduces the summaries together, persisting them to disk by ID
+To configure the plugin, add the following to your root project's `build.gradle.kts` file:
 
-### Data consumer/reporting tasks
+```kotlin
+extensions.configure<DevelocityMetricsExtension> {
+    develocity {
+        // Optional: Set the timezone ID which should be used to define day boundaries.  Defaults
+        // to the system's default timezone.
+        zoneId.set("UTC")
+        
+        // Configure the base URL of the Develocity server to query.  By default, the server URL
+        // configured for the `com.gradle.enterprise` or `com.gradle.develocity` plugin/extension
+        // will be used.
+        develocityServerUrl.set("https://custom-develocity-server.com")
 
-Data consumer / reporting tasks are configured to consume the aggregated data from the first
-stage of the pipeline and produce data or reports in their final form.  These tasks are
-to be implemented as needed to satisfy the requirements of the project.
+        // Optional: Configure the access key to use when querying the Develocity server.
+        // If an access key is explicitly provided to the `com.gradle.enterprise` or
+        // `com.gradle.develocity` extension, that value will be used as a default.  If no
+        // value is configured for this property then the Develocity key will be searched
+        // for in the standard locations for manual key provisioning, documented here:
+        // https://docs.gradle.com/develocity/gradle-plugin/current/#manual_access_key_configuration
+        develocityAccessKey.set("https://custom-develocity-server.com")
+        
+        // Optional: Configure the query filter to use when querying the Develocity server for
+        // builds.  This filter is expressed using the Develocity's advanced search syntax:
+        //  https://docs.gradle.com/enterprise/api-manual/#advanced_search_syntax
+        develocityQueryFilter.set("tag:interesting-builds")
+        
+        // Optional: Set the maximum number of concurrent requests to make to the Develocity server
+        // when querying build data.  Defaults to 24.
+        develocityMaxConcurrency.set(10)
+        
+        // Optional: Add custom summarizers to the plugin.  These summarizers will be used to
+        // build 
+        summarizers.add(MyCustomSummarizer())
+    }
+}
+```
 
-## Operation
-
-### Obtain / Configure a Develocity Access Token
-
+For local development, the Develocity access token can be acquired by running the following command:
 - `./gradlew provisionDevelocityAccessKey` or `./gradlew provisionGradleEnterpriseAccessKey`
 
-## Reference:
+To cause the builds to be queried and summarizers to run, Gradle task rules have been created
+which use the following forms:
+- `develocityMetrics-<datetime>` Examples:
+  - `develocityMetrics-2024-06-01`: Queries all builds for 2024-06-01.
+  - `develocityMetrics-2024-06-01T04`: Queries all builds which started 4AM <= X < 5AM of 2024-06-01.
+- `develocityMetrics-last-<duration>` Examples:
+  - `develocityMetrics-last-P7D`: Queries all builds for the last 7 days.
+  - `develocityMetrics-last-PT8H`: Queries all builds for the last 8 hours.
+  - `develocityMetrics-last-P2DT8H`: Queries all builds within the last 2 days and 8 hours.
+  NOTE: When running queries which span multiple days, the plugin will automatically adjust the
+  starting point to the beginning of the day if the start day is 7 days or more in the past.
 
-### Gradle Enterprise API
+## Run Books
+
+The following documents describe various processes needed for operating and/or maintaining
+the plugin:
+- [Run Book: Update the OpenAPI Specification](docs/RunBook-UpdatingOpenApiSpec.md)
+
+## References
+
+### Develocity API
 
 API Manual: https://docs.gradle.com/enterprise/api-manual/
 API Documentation: https://docs.gradle.com/enterprise/api-manual/ref/2022.4.html
-
-### OpenAPI
-
-This project uses the OpenAPI 3.0 specification. Both iOS and Android are using the
-[OpenAPI generator](https://github.com/OpenAPITools/openapi-generator) to output models. On the Android side,
-we're using [OpenAPI Gradle Plugin](https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin) --
-which is described below.
-
-The current specification, as defined by Gradle Enterprise, can be found
-[here](https://docs.gradle.com/enterprise/api-manual/#reference_documentation).
 
 ## License
 
