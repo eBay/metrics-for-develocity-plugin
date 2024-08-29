@@ -18,13 +18,13 @@
 - Click the "Draft a new release" button.
 - Click the "Choose a tag" button and enter the version being published, prefixed with a `v`.
   For example, `v0.0.2`.  Click the "Create new tag: on publish" button.
-- Ensure the `Target` is set to `main`
-- Ensure the `Previous tag` is set to the last release tag
-- Click `Generate release notes` to populate the release notes
-- Use the prefixed version number as the title of the release
-- Edit the release notes, as/if necessary
-- Ensure that `Set as the latest release` is checked
-- Click the "Publish release" button
+- Ensure the `Target` is set to `main`.
+- Ensure the `Previous tag` is set to the last release tag.
+- Click `Generate release notes` to populate the release notes.
+- Use the prefixed version number as the title of the release.
+- Edit the release notes, as/if necessary.
+- Ensure that `Set as the latest release` is checked.
+- Click the "Publish release" .
 
 The act of publishing the release will trigger the build and publish the release to the Gradle
 Plugin Repository.  This process can be monitored by navigating to the
