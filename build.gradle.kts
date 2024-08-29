@@ -5,16 +5,23 @@ plugins {
     `embedded-kotlin`
     embeddedKotlin("plugin.serialization")
     alias(libs.plugins.openapi.generator)
-    id("java-gradle-plugin")
+    alias(libs.plugins.gradle.pluginPublish)
 }
 
 group = "com.ebay.plugins"
 
 gradlePlugin {
+    website = "https://github.com/eBay/metrics-for-develocity-plugin"
+    vcsUrl = "https://github.com/eBay/metrics-for-develocity-plugin.git"
     plugins {
         create("metricsForDevelocity") {
             id = "com.ebay.metrics-for-develocity"
             implementationClass = "com.ebay.plugins.metrics.develocity.MetricsForDevelocityPlugin"
+            displayName = "Metrics for Develocity Plugin"
+            description = "Gradle plugin which provides a framework for reporting on Develocity build data"
+            tags = listOf(
+                "develocity", "analysis", "report"
+            )
         }
     }
 }
