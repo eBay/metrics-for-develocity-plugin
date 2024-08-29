@@ -2,7 +2,7 @@
 # https://plugins.gradle.org/plugin/com.gradle.develocity
 gradle-develocity = "3.17.6"
 # https://github.com/Kotlin/kotlinx.serialization/releases
-kotlinx-serializationJson = "1.6.3"
+kotlinx-serializationJson = "1.7.2"
 # https://github.com/ktorio/ktor/releases
 ktor = "2.3.12"
 # https://github.com/OpenAPITools/openapi-generator/releases
