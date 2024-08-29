@@ -1,6 +1,8 @@
-name: PR Build
+name: Publish Gradle Plugin
 on:
-  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
 jobs:
   gradle:
     runs-on: ubuntu-latest
@@ -13,7 +15,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
       - name: Build Plugin
-        run: ./gradlew build
-      - name: Build Sample
-        working-directory: sample
-        run: ./gradlew build
+        env:
+          GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
+          GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
+        run: ./gradlew --no-configuration-cache publishPlugins

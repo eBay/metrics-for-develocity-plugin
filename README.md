@@ -1,3 +1,5 @@
+![Gradle Plugin Portal Version](https://img.shields.io/gradle-plugin-portal/v/com.ebay.graph-analytics-plugin)
+
 # Metrics for Develocity Plugin
 
 ## About This Project
@@ -77,6 +79,7 @@ which use the following forms:
 The following documents describe various processes needed for operating and/or maintaining
 the plugin:
 - [Run Book: Update the OpenAPI Specification](docs/RunBook-UpdatingOpenApiSpec.md)
+- [Run Book: Release Process](docs/ReleaseProcess.md)
 
 ## References
 

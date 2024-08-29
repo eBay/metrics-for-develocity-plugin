@@ -1,6 +1,7 @@
 [versions]
 # https://plugins.gradle.org/plugin/com.gradle.develocity
 gradle-develocity = "3.17.6"
+gradle-pluginPublish = "1.2.1"
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinx-serializationJson = "1.6.3"
 # https://github.com/ktorio/ktor/releases
@@ -19,4 +20,5 @@ ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-conte
 ktor-serialization-kotlinxJson = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 
 [plugins]
+gradle-pluginPublish = { id = "com.gradle.plugin-publish", version.ref = "gradle-pluginPublish" }
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }
