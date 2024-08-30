@@ -74,6 +74,14 @@ which use the following forms:
   NOTE: When running queries which span multiple days, the plugin will automatically adjust the
   starting point to the beginning of the day if the start day is 7 days or more in the past.
 
+## Provided Summarizers
+
+This plugin ships with two example summarizer implementations which can be used as-is or
+can be used as a reference for how to add custom summarizers.  Please refer to the following
+documentation for more information on their purpose and usage:
+- [Project Cost](src/main/kotlin/com/ebay/plugins/metrics/develocity/projectcost/README.md)
+- [User Query](src/main/kotlin/com/ebay/plugins/metrics/develocity/userquery/README.md)
+
 ## Run Books
 
 The following documents describe various processes needed for operating and/or maintaining

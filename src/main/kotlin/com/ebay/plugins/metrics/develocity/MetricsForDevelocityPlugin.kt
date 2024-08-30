@@ -1,6 +1,8 @@
 package com.ebay.plugins.metrics.develocity
 
+import com.ebay.plugins.metrics.develocity.projectcost.ProjectCostPlugin
 import com.ebay.plugins.metrics.develocity.service.DevelocityBuildService
+import com.ebay.plugins.metrics.develocity.userquery.UserQueryPlugin
 import com.gradle.develocity.agent.gradle.DevelocityConfiguration
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -23,6 +25,10 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
 ) : Plugin<Project> {
 
     override fun apply(project: Project) {
+        // Example summarizers
+        project.plugins.apply(ProjectCostPlugin::class.java)
+        project.plugins.apply(UserQueryPlugin::class.java)
+
         // Everything after this point is to be done only by the root project
         if (project.parent != null) {
             return
