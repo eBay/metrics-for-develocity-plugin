@@ -5,6 +5,10 @@ pluginManagement {
     includeBuild("..")
 }
 
+plugins {
+    id("com.ebay.metrics-for-develocity")
+}
+
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
