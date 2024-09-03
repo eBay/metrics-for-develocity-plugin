@@ -6,6 +6,7 @@ import com.ebay.plugins.metrics.develocity.userquery.UserQueryPlugin
 import com.gradle.develocity.agent.gradle.DevelocityConfiguration
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.initialization.Settings
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.TaskProvider
 import java.time.Duration
@@ -22,9 +23,53 @@ import javax.inject.Inject
 @Suppress("unused") // False positive
 internal class MetricsForDevelocityPlugin @Inject constructor(
     private val providerFactory: ProviderFactory
-) : Plugin<Project> {
+) : Plugin<Any> {
 
-    override fun apply(project: Project) {
+    override fun apply(target: Any) {
+        when(target) {
+            is Project -> applyProject(target)
+            is Settings -> applySettings(target)
+            else -> throw IllegalArgumentException("Unsupported plugin target type: ${target::class.java}")
+        }
+    }
+
+    private fun applySettings(settings: Settings) {
+        settings.gradle.beforeProject { project ->
+            project.plugins.apply(MetricsForDevelocityPlugin::class.java)
+        }
+
+        // Auto-configure the Gradle Enterprise access if the plugin is applied and has been
+        // directly configured with a server URL and/or access key.
+        settings.plugins.withId("com.gradle.enterprise") {
+            @Suppress("DEPRECATION") // GradleEnterpriseExtension is deprecated
+            val gradleExt = settings.extensions.getByType(com.gradle.enterprise.gradleplugin.GradleEnterpriseExtension::class.java)
+            settings.gradle.afterProject { project ->
+                project.plugins.withId("com.ebay.metrics-for-develocity") {
+                    project.extensions.findByType(MetricsForDevelocityExtension::class.java)?.let { ext ->
+                        with(ext) {
+                            develocityServerUrl.convention(gradleExt.server)
+                            develocityAccessKey.convention(gradleExt.accessKey)
+                        }
+                    }
+                }
+            }
+        }
+        settings.plugins.withId("com.gradle.develocity") {
+            val gradleExt = settings.extensions.getByType(DevelocityConfiguration::class.java)
+            settings.gradle.afterProject { project ->
+                project.plugins.withId("com.ebay.metrics-for-develocity") {
+                    project.extensions.findByType(MetricsForDevelocityExtension::class.java)?.let { ext ->
+                        with(ext) {
+                            develocityServerUrl.convention(gradleExt.server)
+                            develocityAccessKey.convention(gradleExt.accessKey)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun applyProject(project: Project) {
         // Example summarizers
         project.plugins.apply(ProjectCostPlugin::class.java)
         project.plugins.apply(UserQueryPlugin::class.java)
@@ -41,22 +86,6 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
                 develocityMaxConcurrency.convention(24)
                 develocityQueryFilter.convention(providerFactory.gradleProperty(QUERY_FILTER_PROPERTY))
             }
-
-        // Auto-configure the Gradle Enterprise access if the plugin is applied and has been
-        // directly configured with a server URL and/or access key.
-        project.plugins.withId("com.gradle.enterprise") {
-            @Suppress("DEPRECATION") // GradleEnterpriseExtension is deprecated
-            project.extensions.configure(com.gradle.enterprise.gradleplugin.GradleEnterpriseExtension::class.java) { ge ->
-                ge.server?.let { server -> ext.develocityServerUrl.convention(server) }
-                ge.accessKey?.let { key -> ext.develocityAccessKey.convention(key) }
-            }
-        }
-        project.plugins.withId("com.gradle.develocity") {
-            project.extensions.configure(DevelocityConfiguration::class.java) { ge ->
-                ge.server?.let { server -> ext.develocityServerUrl.convention(server) }
-                ge.accessKey?.let { key -> ext.develocityAccessKey.convention(key) }
-            }
-        }
 
         // Register the build service used to query Develocity for build data
         val buildServiceProvider = project.gradle.sharedServices.registerIfAbsent(
