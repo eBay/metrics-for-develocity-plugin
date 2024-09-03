@@ -84,7 +84,9 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
             .apply {
                 zoneId.convention(ZoneId.systemDefault().id)
                 develocityMaxConcurrency.convention(24)
-                develocityQueryFilter.convention(providerFactory.gradleProperty(QUERY_FILTER_PROPERTY))
+                develocityQueryFilter.convention(
+                    providerFactory.gradleProperty(QUERY_FILTER_PROPERTY)
+                        .orElse("project:${project.name}"))
             }
 
         // Register the build service used to query Develocity for build data

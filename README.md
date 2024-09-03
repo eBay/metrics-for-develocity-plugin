@@ -52,6 +52,8 @@ extensions.configure<MetricsForDevelocityExtension> {
         // Optional: Configure the query filter to use when querying the Develocity server for
         // builds.  This filter is expressed using the Develocity's advanced search syntax:
         //  https://docs.gradle.com/enterprise/api-manual/#advanced_search_syntax
+        // If no value is specified, the filter is set to filter for the current project
+        //   "project:${rootProject.name}".
         develocityQueryFilter.set("tag:interesting-builds")
         
         // Optional: Set the maximum number of concurrent requests to make to the Develocity server
