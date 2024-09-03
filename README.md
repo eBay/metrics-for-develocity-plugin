@@ -1,4 +1,4 @@
-![Gradle Plugin Portal Version](https://img.shields.io/gradle-plugin-portal/v/com.ebay.graph-analytics-plugin)
+![Gradle Plugin Portal Version](https://img.shields.io/gradle-plugin-portal/v/com.ebay.graph-analytics)
 
 # Metrics for Develocity Plugin
 
@@ -21,8 +21,14 @@ The plugin is designed to work with Gradle 8.8 or later.
 
 ## Usage
 
-To configure the plugin, add the following to your root project's `build.gradle.kts` file:
+To enable the plugin, add the following to your project's `settings.gradle.kts` file:
+```kotlin
+plugins {
+    id("com.gradle.metrics-for-develocity") version("<current version goes here>")
+}
+```
 
+Then, configure the plugin in your root project's `build.gradle.kts` file:
 ```kotlin
 extensions.configure<MetricsForDevelocityExtension> {
     develocity {

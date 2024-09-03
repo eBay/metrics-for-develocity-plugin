@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     `embedded-kotlin`
-    id("com.ebay.metrics-for-develocity")
 }
 
 java {
