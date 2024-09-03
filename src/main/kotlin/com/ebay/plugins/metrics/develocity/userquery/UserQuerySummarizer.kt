@@ -14,7 +14,7 @@ import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
 /**
- * [DevelocityMetricSummarizer] implementation which collects the usernames of the builds that match the
+ * [MetricSummarizer] implementation which collects the usernames of the builds that match the
  * query filter.
  */
 class UserQuerySummarizer(
