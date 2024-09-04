@@ -70,15 +70,16 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
     }
 
     private fun applyProject(project: Project) {
+        if (project.parent == null) {
+            applyRootProject(project)
+        }
+
         // Example summarizers
         project.plugins.apply(ProjectCostPlugin::class.java)
         project.plugins.apply(UserQueryPlugin::class.java)
+    }
 
-        // Everything after this point is to be done only by the root project
-        if (project.parent != null) {
-            return
-        }
-
+    private fun applyRootProject(project: Project) {
         // Create the extension which will be used to configure the plugin behavior
         val ext = project.extensions.create(EXTENSION_NAME, MetricsForDevelocityExtension::class.java)
             .apply {

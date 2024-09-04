@@ -53,7 +53,7 @@ private fun Project.internalExt(): MetricsForDevelocityInternalExtension {
      * rules applied to programmatically created tasks as well as those created on the command
      * line.  This works for now...
      */
-    // NTVARCH-20906: This violates project isolation
+    // TODO: This violates project isolation
     val ext = project.rootProject.extensions.getByType(MetricsForDevelocityExtension::class.java)
     return ext.extensions.getByType(MetricsForDevelocityInternalExtension::class.java)
 }
