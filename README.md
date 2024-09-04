@@ -52,6 +52,8 @@ extensions.configure<MetricsForDevelocityExtension> {
         // Optional: Configure the query filter to use when querying the Develocity server for
         // builds.  This filter is expressed using the Develocity's advanced search syntax:
         //  https://docs.gradle.com/enterprise/api-manual/#advanced_search_syntax
+        // If no value is specified, the filter is set to filter for the current project
+        //   "project:${rootProject.name}".
         develocityQueryFilter.set("tag:interesting-builds")
         
         // Optional: Set the maximum number of concurrent requests to make to the Develocity server
@@ -79,6 +81,14 @@ which use the following forms:
   - `metricsForDevelocity-last-P2DT8H`: Queries all builds within the last 2 days and 8 hours.
   NOTE: When running queries which span multiple days, the plugin will automatically adjust the
   starting point to the beginning of the day if the start day is 7 days or more in the past.
+
+## Provided Summarizers
+
+This plugin ships with two example summarizer implementations which can be used as-is or
+can be used as a reference for how to add custom summarizers.  Please refer to the following
+documentation for more information on their purpose and usage:
+- [Project Cost](src/main/kotlin/com/ebay/plugins/metrics/develocity/projectcost/README.md)
+- [User Query](src/main/kotlin/com/ebay/plugins/metrics/develocity/userquery/README.md)
 
 ## Run Books
 

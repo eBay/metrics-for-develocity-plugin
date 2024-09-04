@@ -1,6 +1,8 @@
 package com.ebay.plugins.metrics.develocity
 
+import com.ebay.plugins.metrics.develocity.projectcost.ProjectCostPlugin
 import com.ebay.plugins.metrics.develocity.service.DevelocityBuildService
+import com.ebay.plugins.metrics.develocity.userquery.UserQueryPlugin
 import com.gradle.develocity.agent.gradle.DevelocityConfiguration
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -68,6 +70,10 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
     }
 
     private fun applyProject(project: Project) {
+        // Example summarizers
+        project.plugins.apply(ProjectCostPlugin::class.java)
+        project.plugins.apply(UserQueryPlugin::class.java)
+
         // Everything after this point is to be done only by the root project
         if (project.parent != null) {
             return
@@ -78,7 +84,9 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
             .apply {
                 zoneId.convention(ZoneId.systemDefault().id)
                 develocityMaxConcurrency.convention(24)
-                develocityQueryFilter.convention(providerFactory.gradleProperty(QUERY_FILTER_PROPERTY))
+                develocityQueryFilter.convention(
+                    providerFactory.gradleProperty(QUERY_FILTER_PROPERTY)
+                        .orElse("project:${project.name}"))
             }
 
         // Register the build service used to query Develocity for build data
