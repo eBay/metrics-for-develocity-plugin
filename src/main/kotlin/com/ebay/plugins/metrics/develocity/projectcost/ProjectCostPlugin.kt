@@ -40,7 +40,7 @@ internal class ProjectCostPlugin @Inject constructor(
                 project.tasks.register(taskName, ProjectCostReportTask::class.java).also { taskProvider ->
                     taskProvider.configure { task ->
                         with(task) {
-                            reportFile.set(project.layout.buildDirectory.file("reports/projectCost/projectCostReport-$reportDuration.json"))
+                            reportFile.set(project.layout.buildDirectory.file("projectCost/intermediate/$taskName.json"))
                         }
                     }
                     taskProvider.inputsFromDuration(project, reportDuration, ProjectCostSummarizer.ID)
@@ -50,7 +50,7 @@ internal class ProjectCostPlugin @Inject constructor(
 
         project.tasks.addRule(
             "Pattern: $PROJECT_COST_TASK_PREFIX-<Java Duration String>  " +
-                    "Creates a project-specific report showing details about what has contibuted to the overall" +
+                    "Creates a project-specific report showing details about what has contributed to the overall" +
                     "project build cost."
         ) { taskName ->
             val matcher = PROJECT_COST_TASK_PATTERN.matcher(taskName)

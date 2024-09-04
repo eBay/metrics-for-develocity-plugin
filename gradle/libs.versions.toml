@@ -1,5 +1,5 @@
 [versions]
-ebay-graphAnalytics = "0.0.1"
+ebay-graphAnalytics = "1.0.0"
 # https://plugins.gradle.org/plugin/com.gradle.develocity
 gradle-develocity = "3.18"
 gradle-pluginPublish = "1.2.2"
