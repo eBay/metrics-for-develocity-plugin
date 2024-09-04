@@ -1,17 +1,22 @@
 package com.ebay.plugins.metrics.develocity.projectcost
 
+import com.ebay.plugins.graph.analytics.GraphExtension
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityExtension
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityPlugin
 import com.ebay.plugins.metrics.develocity.inputsFromDuration
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.TaskProvider
+import javax.inject.Inject
 
 /**
  * Plugin implementation used to add project build cost reporting functionality leveraging the
  * [MetricsForDevelocityPlugin].
  */
-internal class ProjectCostPlugin : Plugin<Project> {
+internal class ProjectCostPlugin @Inject constructor(
+    private val providerFactory: ProviderFactory
+) : Plugin<Project> {
     override fun apply(project: Project) {
         if (project.parent == null) {
             project.plugins.withType(MetricsForDevelocityPlugin::class.java) {
@@ -83,12 +88,31 @@ internal class ProjectCostPlugin : Plugin<Project> {
                 taskProvider.inputsFromDuration(project, durationStr, ProjectCostSummarizer.ID)
             }
         }
+
+        val projectCostGraphAnalysis = providerFactory.gradleProperty(GRAPH_ANALYSIS_ENABLED_PROPERTY).orNull.toBoolean()
+        if (projectCostGraphAnalysis) {
+            val reportDuration = providerFactory.gradleProperty(GRAPH_ANALYSIS_DURATION_PROPERTY).orElse("P7D").get()
+            val reportTaskProvider = reportTaskProviderFun.invoke(reportDuration)
+            val graphAnalysisTask = project.tasks.register("projectCostGraphAnalysis-$reportDuration", ProjectCostGraphAnalysisTask::class.java)
+            graphAnalysisTask.configure { task ->
+                with(task) {
+                    projectReportProperty.set(reportTaskProvider.flatMap { it.reportFile })
+                }
+            }
+            project.plugins.withId("com.ebay.graph-analytics") {
+                project.extensions.getByType(GraphExtension::class.java).apply {
+                    analysisTasks.add(graphAnalysisTask)
+                }
+            }
+        }
     }
 
     companion object {
         private const val EXTENSION_NAME = "projectCost"
         private const val INSPECTION_TASK_PREFIX = "projectCostInspectionReport"
         private const val PROJECT_COST_TASK_PREFIX = "projectCostReport"
+        private const val GRAPH_ANALYSIS_ENABLED_PROPERTY = "projectCostGraphAnalysisEnabled"
+        private const val GRAPH_ANALYSIS_DURATION_PROPERTY = "projectCostGraphAnalysisDuration"
 
         private val INSPECTION_TASK_PATTERN = Regex(
             // Examples:

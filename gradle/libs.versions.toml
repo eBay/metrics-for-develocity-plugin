@@ -1,4 +1,5 @@
 [versions]
+ebay-graphAnalytics = "0.0.1"
 # https://plugins.gradle.org/plugin/com.gradle.develocity
 gradle-develocity = "3.18"
 gradle-pluginPublish = "1.2.2"
@@ -18,6 +19,7 @@ ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinxJson = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+pluginLib-ebay-graphAnalytics = { module = "com.ebay.graph-analytics:com.ebay.graph-analytics.gradle.plugin", version.ref = "ebay-graphAnalytics" }
 
 [plugins]
 gradle-pluginPublish = { id = "com.gradle.plugin-publish", version.ref = "gradle-pluginPublish" }

@@ -28,6 +28,7 @@ gradlePlugin {
 
 dependencies {
     compileOnly(libs.gradle.develocity)
+    compileOnly(libs.pluginLib.ebay.graphAnalytics)
 
     implementation(libs.kotlinx.serializationJson)
     implementation(libs.ktor.client.auth)
