@@ -116,7 +116,7 @@ internal abstract class ProjectCostInspectionTask : DefaultTask(), MetricSummari
             append(topTypesByExecutions)
             append(impactedUserReport)
             append(buildScansReport)
-        }
+        }.replace("\n", System.lineSeparator())
         outputFile.asFile.get().also { reportFile ->
             logger.lifecycle("Project cost inspection report available at: file://${reportFile.absolutePath}")
             reportFile.writeText(report)

@@ -16,10 +16,6 @@ internal abstract class UserQueryReportTask : DefaultTask(), MetricSummarizerTas
     @get:OutputFile
     abstract val reportFile: RegularFileProperty
 
-    init {
-        group = "graph analytics"
-    }
-
     @TaskAction
     fun createReport() {
         val summaryFile = summarizerDataProperty.get()
@@ -27,6 +23,7 @@ internal abstract class UserQueryReportTask : DefaultTask(), MetricSummarizerTas
         val report = model.users.sorted().joinToString(
             prefix = "User(s) who have performed builds matching the query filter (${model.users.size}):\n    ",
             separator = "\n    ")
+            .replace("\n", System.lineSeparator())
         reportFile.asFile.get().also { reportFile ->
             logger.lifecycle("User report available at: file://${reportFile.absolutePath}")
             reportFile.writeText(report)
