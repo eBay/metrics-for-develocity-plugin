@@ -100,7 +100,7 @@ open class GatherHourlyTask @Inject constructor(
         // Fail task execution if we receive any error responses
         val errorHandler: (response: HttpResponse) -> Unit = {
             runBlocking {
-                throw GradleException("Failed to get builds: ${it.call.response.status}\n\t${it.call.response.bodyAsText()}")
+                throw GradleException("Failed to get builds: ${it.call.response.status}${System.lineSeparator()}\t${it.call.response.bodyAsText()}")
             }
         }
 

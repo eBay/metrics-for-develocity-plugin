@@ -51,6 +51,7 @@ open class GatherAggregateTask @Inject constructor(
         val inputs = sourceOutputDirectories.files
             .sorted()
             .joinToString(prefix = "Aggregating sources:\n\t", separator = "\n\t") { it.name }
+            .replace("\n", System.lineSeparator())
         outputDirectoryProperty.file("inputs").get().asFile.writeText(inputs)
 
         val summarizerStates = summarizersProperty.get().map { MetricSummarizerState(it) }
