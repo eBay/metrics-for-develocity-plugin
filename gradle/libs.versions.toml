@@ -1,7 +1,7 @@
 [versions]
 ebay-graphAnalytics = "1.0.0"
 # https://plugins.gradle.org/plugin/com.gradle.develocity
-gradle-develocity = "3.18"
+gradle-develocity = "3.18.1"
 gradle-pluginPublish = "1.2.2"
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinx-serializationJson = "1.6.3"
