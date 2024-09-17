@@ -7,9 +7,9 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
-import org.gradle.api.file.RegularFile
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
+import java.io.File
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
@@ -30,9 +30,9 @@ class UserQuerySummarizer(
     }
 
     @OptIn(ExperimentalSerializationApi::class) // decodeFromStream
-    override fun read(file: RegularFile): UserQuerySummary {
-        return if (file.asFile.exists()) {
-            file.asFile.inputStream().use { inputStream ->
+    override fun read(file: File): UserQuerySummary {
+        return if (file.exists()) {
+            file.inputStream().use { inputStream ->
                 BufferedInputStream(inputStream).use { buffered ->
                     if (compressOutput) {
                         GZIPInputStream(buffered).use { gzip ->
@@ -49,8 +49,8 @@ class UserQuerySummarizer(
     }
 
     @OptIn(ExperimentalSerializationApi::class) // encodeToStream
-    override fun write(intermediate: UserQuerySummary, file: RegularFile) {
-        file.asFile.outputStream().use { outputStream ->
+    override fun write(intermediate: UserQuerySummary, file: File) {
+        file.outputStream().use { outputStream ->
             BufferedOutputStream(outputStream).use { buffered ->
                 if (compressOutput) {
                     GZIPOutputStream(buffered).use { gzip ->

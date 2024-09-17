@@ -153,7 +153,7 @@ open class GatherHourlyTask @Inject constructor(
             val outputDirectory = outputDirectoryProperty.get()
             summarizerStates.forEach { state ->
                 val outputFile = PathUtil.hourlySummarizerOutputFile(outputDirectory, state.summarizer)
-                state.write(outputFile)
+                state.write(outputFile.asFile)
             }
         }
     }
