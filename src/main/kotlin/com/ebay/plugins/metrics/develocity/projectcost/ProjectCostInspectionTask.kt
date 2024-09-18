@@ -1,5 +1,6 @@
 package com.ebay.plugins.metrics.develocity.projectcost
 
+import com.ebay.plugins.metrics.develocity.DevelocityConfigurationInputs
 import com.ebay.plugins.metrics.develocity.MetricSummarizerTask
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -15,12 +16,9 @@ import org.gradle.api.tasks.TaskAction
  * associated with the project.
  */
 @CacheableTask
-internal abstract class ProjectCostInspectionTask : DefaultTask(), MetricSummarizerTask {
+internal abstract class ProjectCostInspectionTask : DefaultTask(), MetricSummarizerTask, DevelocityConfigurationInputs {
     @get:OutputFile
     internal abstract val outputFile: RegularFileProperty
-
-    @get:Input
-    internal abstract val develocityUrl: Property<String>
 
     @get:Input
     internal abstract val projectPath: Property<String>
@@ -81,7 +79,7 @@ internal abstract class ProjectCostInspectionTask : DefaultTask(), MetricSummari
                 separator = "\n\t",
                 postfix = "\n\n")
         }
-        val baseUrl = develocityUrl.orNull?.let {
+        val baseUrl = develocityServerUrl.orNull?.let {
             if (it.isEmpty()) {
                 ""
             } else if (it.endsWith("/")) {
