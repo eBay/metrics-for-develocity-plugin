@@ -1,7 +1,7 @@
 package com.ebay.plugins.metrics.develocity
 
 import com.ebay.plugins.metrics.develocity.service.model.Build
-import org.gradle.api.file.RegularFile
+import java.io.File
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -43,7 +43,7 @@ internal class MetricSummarizerState<T>(
      * Update the current state by reading the intermediate data from the given file and then
      * reducing it with the current state.
      */
-    fun ingestFile(file: RegularFile) {
+    fun ingestFile(file: File) {
         summarizer.read(file).let { intermediate ->
             update(intermediate)
         }
@@ -53,7 +53,7 @@ internal class MetricSummarizerState<T>(
      * Writes the current state to the file location specified.  If no data has been accumulated
      * then the file will not be written.
      */
-    fun write(file: RegularFile) {
+    fun write(file: File) {
         stateRef.get()?.let {
             summarizer.write(it, file)
         }

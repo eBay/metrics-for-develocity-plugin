@@ -70,13 +70,13 @@ open class GatherAggregateTask @Inject constructor(
                 }.get()
                 val inputFile = PathUtil.summarizerFile(directory, state.summarizer)
 
-                state.ingestFile(inputFile)
+                state.ingestFile(inputFile.asFile)
             }
         }
 
         summarizerStates.forEach { state ->
             val outputFile = PathUtil.summarizerFile(outputDirectoryProperty.get(), state.summarizer)
-            state.write(outputFile)
+            state.write(outputFile.asFile)
         }
     }
 }

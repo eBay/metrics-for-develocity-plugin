@@ -2,7 +2,7 @@ package com.ebay.plugins.metrics.develocity
 
 import com.ebay.plugins.metrics.develocity.service.model.Build
 import com.ebay.plugins.metrics.develocity.service.model.BuildModelName
-import org.gradle.api.file.RegularFile
+import java.io.File
 
 /**
  * Build data summarizer which can be used to process build data into an intermediate form,
@@ -25,12 +25,12 @@ abstract class MetricSummarizer<Intermediate> {
      * Reads intermediate data from a file.  If the file provided does not exist then the
      * method should return an empty intermediate data object.
      */
-    abstract fun read(file: RegularFile): Intermediate
+    abstract fun read(file: File): Intermediate
 
     /**
      * Writes an intermediate data object to the file specified.
      */
-    abstract fun write(intermediate: Intermediate, file: RegularFile)
+    abstract fun write(intermediate: Intermediate, file: File)
 
     /**
      * Processes a single build and produces an intermediate representation.

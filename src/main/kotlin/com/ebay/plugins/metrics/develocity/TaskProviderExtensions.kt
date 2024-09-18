@@ -71,7 +71,7 @@ private fun TaskProvider<out MetricSummarizerTask>.configureInputs(
             val inputFileProvider = inputTask.flatMap { aggregateTask ->
                 PathUtil.summarizerFile(aggregateTask.outputDirectoryProperty, summarizerId)
             }
-            summarizerDataProperty.set(inputFileProvider)
+            summarizerDataProperty.set(inputFileProvider.map { it.asFile })
         }
     }
 }
