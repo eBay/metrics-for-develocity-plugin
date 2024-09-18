@@ -125,86 +125,15 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
                 }
             }
 
-        /*
-         * Function to register an hourly gather task.  This function must be re-entrant and allow for
-         * the same task to be registered multiple times without error.
-         */
-        val registerHourly: (timeSpec: String) -> TaskProvider<GatherHourlyTask> = { timeSpec ->
-            val taskName = "$TASK_PREFIX-$timeSpec"
-            if (project.tasks.names.contains(taskName)) {
-                // task already exists.  Return its TaskProvider.
-                project.tasks.named(taskName, GatherHourlyTask::class.java)
-            } else {
-                // Task does not exist, so we need to create it.
-                project.tasks.register(taskName, GatherHourlyTask::class.java)
-                    .also { gatherTaskProvider ->
-                        gatherTaskProvider.configure { task ->
-                            with(task) {
-                                // Never cache the current hour so that we get up-to-date data:
-                                val currentDayWithHour = currentDayWithHourProvider.get()
-                                if (timeSpec == currentDayWithHour) {
-                                    with(outputs) {
-                                        cacheIf("The current hour is never cached to ensure we have all data") { false }
-                                        upToDateWhen { false }
-                                    }
-                                }
 
-                                val start = dateHelper.fromHourlyString(timeSpec)
-                                startProperty.set(start.toEpochMilli())
-                                endExclusiveProperty.set(
-                                    start.plus(1, ChronoUnit.HOURS).toEpochMilli()
-                                )
-                                zoneIdProperty.set(ext.zoneId)
-                                queryProperty.set(ext.develocityQueryFilter)
-                                summarizersProperty.set(ext.summarizers)
-                                develocityServiceProperty.set(buildServiceProvider)
-                                outputDirectoryProperty.set(PathUtil.hourlyOutputDir(project.layout, timeSpec))
-                                usesService(buildServiceProvider)
-                            }
-                        }
-                    }
-            }
-        }
-
-        /*
-         * Function to register an daily aggregation task.  This function must be re-entrant and allow for
-         * the same task to be registered multiple times without error.
-         */
-        val registerDaily: (dateString: String) -> TaskProvider<GatherAggregateTask> = { dateString ->
-            val taskName = "$TASK_PREFIX-$dateString"
-            if (project.tasks.names.contains(taskName)) {
-                // task already exists.  Return its TaskProvider.
-                project.tasks.named(taskName, GatherAggregateTask::class.java)
-            } else {
-                // Task does not exist, so we need to create it.
-                project.tasks.register(taskName, GatherAggregateTask::class.java).also { taskProvider ->
-                    taskProvider.configure { task ->
-                        with(task) {
-                            val currentDayWithHour = currentDayWithHourProvider.get()
-                            val day = dateHelper.fromDailyString(dateString)
-                            for (interval in 0 until 24) {
-                                val hourInstant = day.plus(interval.toLong(), ChronoUnit.HOURS)
-                                val timeSpec = dateHelper.toHourlyString(hourInstant)
-
-                                dependsOn(project.provider {
-                                    registerHourly(timeSpec).also { hourlyProvider ->
-                                        sourceOutputDirectories.from(hourlyProvider.flatMap { it.outputDirectoryProperty })
-                                    }.name
-                                })
-
-                                if (timeSpec == currentDayWithHour) {
-                                    // We are processing the current day and have reached the current hour.  Stop here.
-                                    break
-                                }
-                            }
-                            zoneOffset.set(ext.zoneId)
-                            summarizersProperty.set(ext.summarizers)
-                            outputDirectoryProperty.set(PathUtil.dailyOutputDir(project.layout, dateString))
-                        }
-                    }
-                }
-            }
-        }
+        // Helper to allow all of this data to be easily passed into helper functions
+        val pluginContext = PluginContext(
+            project,
+            buildServiceProvider,
+            currentDayWithHourProvider,
+            dateHelper,
+            ext,
+        )
 
         /*
          * Rule to register a task for a specific date and optionally hour.
@@ -222,56 +151,10 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
 
             if (hour == null ) {
                 // Daily task
-                registerDaily(date)
+                pluginContext.registerDaily(date)
             } else {
                 // Hourly task
-                registerHourly(timeSpec)
-            }
-        }
-
-        /*
-         * Function to register an duration aggregation task.  This function must be re-entrant and allow for
-         * the same task to be registered multiple times without error.
-         */
-        val registerDurationAggregation: (durationStr: String) -> TaskProvider<GatherAggregateTask> = { durationStr ->
-            val duration = Duration.parse(durationStr)
-            val currentDayWithHour = currentDayWithHourProvider.get()
-            val endTime = dateHelper.fromHourlyString(currentDayWithHour)
-            val startTime = endTime.minus(duration).truncatedTo(ChronoUnit.HOURS)
-            val inputTaskProviders = generateTimeSequence(ext.zoneId.get(), startTime, endTime).map { (isHourly, dateTime) ->
-                val dateStr = dateHelper.toDailyString(dateTime.toInstant())
-                if (isHourly) {
-                    val timeSpec = dateHelper.toHourlyString(dateTime.toInstant())
-                    registerHourly(timeSpec)
-                } else {
-                    registerDaily(dateStr)
-                }
-            }.toList()
-
-            val taskName = "$TASK_PREFIX-last-$durationStr"
-            if (project.tasks.names.contains(taskName)) {
-                // task already exists.  Return its TaskProvider.
-                project.tasks.named(taskName, GatherAggregateTask::class.java)
-            } else {
-                // Task does not exist, so we need to create it.
-                project.tasks.register(taskName, GatherAggregateTask::class.java).also { taskProvider ->
-                    taskProvider.configure { task ->
-                        with(task) {
-                            inputTaskProviders.forEach { taskProvider ->
-                                sourceOutputDirectories.from(taskProvider.flatMap {
-                                    if (it is MetricsIntermediateTask) {
-                                        it.outputDirectoryProperty
-                                    } else {
-                                        throw IllegalStateException("Unexpected task type: ${it::class.java}")
-                                    }
-                                })
-                            }
-                            zoneOffset.set(ext.zoneId)
-                            summarizersProperty.set(ext.summarizers)
-                            outputDirectoryProperty.set(PathUtil.durationOutputDir(project.layout, durationStr))
-                        }
-                    }
-                }
+                pluginContext.registerHourly(timeSpec)
             }
         }
 
@@ -287,16 +170,142 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
             if (!matcher.matches()) return@addRule
 
             val durationStr: String = matcher.group(1)
-            registerDurationAggregation(durationStr)
+            pluginContext.registerDurationAggregation(durationStr)
         }
 
         ext.extensions.create(
             INTERNAL_EXTENSION_NAME,
             MetricsForDevelocityInternalExtension::class.java,
-            registerHourly,
-            registerDaily,
-            registerDurationAggregation,
+            { timeSpec: String -> pluginContext.registerHourly(timeSpec) },
+            { dateStr: String -> pluginContext.registerDaily(dateStr) },
+            { durationStr: String -> pluginContext.registerDurationAggregation(durationStr) },
         )
+    }
+
+    /*
+     * Function to register an hourly gather task.  This function must be re-entrant and allow for
+     * the same task to be registered multiple times without error.
+     */
+    private fun PluginContext.registerHourly(timeSpec: String): TaskProvider<GatherHourlyTask> {
+        val taskName = "$TASK_PREFIX-$timeSpec"
+        return if (project.tasks.names.contains(taskName)) {
+            // task already exists.  Return its TaskProvider.
+            project.tasks.named(taskName, GatherHourlyTask::class.java)
+        } else {
+            // Task does not exist, so we need to create it.
+            project.tasks.register(taskName, GatherHourlyTask::class.java).also { gatherTaskProvider ->
+                gatherTaskProvider.configure { task ->
+                    with(task) {
+                        // Never cache the current hour so that we get up-to-date data:
+                        val currentDayWithHour = currentDayWithHourProvider.get()
+                        if (timeSpec == currentDayWithHour) {
+                            with(outputs) {
+                                cacheIf("The current hour is never cached to ensure we have all data") { false }
+                                upToDateWhen { false }
+                            }
+                        }
+
+                        val start = dateHelper.fromHourlyString(timeSpec)
+                        startProperty.set(start.toEpochMilli())
+                        endExclusiveProperty.set(
+                            start.plus(1, ChronoUnit.HOURS).toEpochMilli()
+                        )
+                        zoneIdProperty.set(ext.zoneId)
+                        queryProperty.set(ext.develocityQueryFilter)
+                        summarizersProperty.set(ext.summarizers)
+                        develocityServiceProperty.set(buildServiceProvider)
+                        outputDirectoryProperty.set(PathUtil.hourlyOutputDir(project.layout, timeSpec))
+                        usesService(buildServiceProvider)
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * Function to register an daily aggregation task.  This function must be re-entrant and allow for
+     * the same task to be registered multiple times without error.
+     */
+    private fun PluginContext.registerDaily(dateString: String): TaskProvider<GatherAggregateTask> {
+        val taskName = "$TASK_PREFIX-$dateString"
+        return if (project.tasks.names.contains(taskName)) {
+            // task already exists.  Return its TaskProvider.
+            project.tasks.named(taskName, GatherAggregateTask::class.java)
+        } else {
+            // Task does not exist, so we need to create it.
+            project.tasks.register(taskName, GatherAggregateTask::class.java).also { taskProvider ->
+                taskProvider.configure { task ->
+                    with(task) {
+                        val currentDayWithHour = currentDayWithHourProvider.get()
+                        val day = dateHelper.fromDailyString(dateString)
+                        for (interval in 0 until 24) {
+                            val hourInstant = day.plus(interval.toLong(), java.time.temporal.ChronoUnit.HOURS)
+                            val timeSpec = dateHelper.toHourlyString(hourInstant)
+
+                            dependsOn(project.provider {
+                                registerHourly(timeSpec).also { hourlyProvider ->
+                                    sourceOutputDirectories.from(hourlyProvider.flatMap { it.outputDirectoryProperty })
+                                }.name
+                            })
+
+                            if (timeSpec == currentDayWithHour) {
+                                // We are processing the current day and have reached the current hour.  Stop here.
+                                break
+                            }
+                        }
+                        zoneOffset.set(ext.zoneId)
+                        summarizersProperty.set(ext.summarizers)
+                        outputDirectoryProperty.set(PathUtil.dailyOutputDir(project.layout, dateString))
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * Function to register an duration aggregation task.  This function must be re-entrant and allow for
+     * the same task to be registered multiple times without error.
+     */
+    private fun PluginContext.registerDurationAggregation(durationStr: String): TaskProvider<GatherAggregateTask> {
+        val duration = Duration.parse(durationStr)
+        val currentDayWithHour = currentDayWithHourProvider.get()
+        val endTime = dateHelper.fromHourlyString(currentDayWithHour)
+        val startTime = endTime.minus(duration).truncatedTo(ChronoUnit.HOURS)
+        val inputTaskProviders = generateTimeSequence(ext.zoneId.get(), startTime, endTime).map { (isHourly, dateTime) ->
+            val dateStr = dateHelper.toDailyString(dateTime.toInstant())
+            if (isHourly) {
+                val timeSpec = dateHelper.toHourlyString(dateTime.toInstant())
+                registerHourly(timeSpec)
+            } else {
+                registerDaily(dateStr)
+            }
+        }.toList()
+
+        val taskName = "$TASK_PREFIX-last-$durationStr"
+        return if (project.tasks.names.contains(taskName)) {
+            // task already exists.  Return its TaskProvider.
+            project.tasks.named(taskName, GatherAggregateTask::class.java)
+        } else {
+            // Task does not exist, so we need to create it.
+            project.tasks.register(taskName, GatherAggregateTask::class.java).also { taskProvider ->
+                taskProvider.configure { task ->
+                    with(task) {
+                        inputTaskProviders.forEach { taskProvider ->
+                            sourceOutputDirectories.from(taskProvider.flatMap {
+                                if (it is MetricsIntermediateTask) {
+                                    it.outputDirectoryProperty
+                                } else {
+                                    throw IllegalStateException("Unexpected task type: ${it::class.java}")
+                                }
+                            })
+                        }
+                        zoneOffset.set(ext.zoneId)
+                        summarizersProperty.set(ext.summarizers)
+                        outputDirectoryProperty.set(PathUtil.durationOutputDir(project.layout, durationStr))
+                    }
+                }
+            }
+        }
     }
 
     /**
