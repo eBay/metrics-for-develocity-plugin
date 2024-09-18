@@ -58,6 +58,10 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
                         }
                     }
                 }
+                // Configure tasks wanting to consume the Gradle Enterprise configuration:
+                project.tasks.withType(DevelocityConfigurationInputs::class.java).configureEach { task ->
+                    task.develocityServerUrl.set(gradleExt.server)
+                }
             }
         }
         settings.plugins.withId("com.gradle.develocity") {
@@ -70,6 +74,10 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
                             develocityAccessKey.convention(gradleExt.accessKey)
                         }
                     }
+                }
+                // Configure tasks wanting to consume the Develocity configuration:
+                project.tasks.withType(DevelocityConfigurationInputs::class.java).configureEach { task ->
+                    task.develocityServerUrl.set(gradleExt.server)
                 }
             }
         }

@@ -76,15 +76,7 @@ internal class ProjectCostPlugin @Inject constructor(
                     outputFile.set(project.layout.buildDirectory.file("reports/projectCost/inspection.txt"))
                 }
             }
-
             project.plugins.withType(MetricsForDevelocityPlugin::class.java) {
-                // TODO: This violates project isolation
-                val serverUrlProp = project.rootProject.extensions.getByType(MetricsForDevelocityExtension::class.java).develocityServerUrl
-                taskProvider.configure { task ->
-                    with(task) {
-                        develocityUrl.set(serverUrlProp)
-                    }
-                }
                 taskProvider.inputsFromDuration(project, durationStr, ProjectCostSummarizer.ID)
             }
         }
