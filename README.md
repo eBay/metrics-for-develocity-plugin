@@ -47,7 +47,7 @@ extensions.configure<MetricsForDevelocityExtension> {
         // value is configured for this property then the Develocity key will be searched
         // for in the standard locations for manual key provisioning, documented here:
         // https://docs.gradle.com/develocity/gradle-plugin/current/#manual_access_key_configuration
-        develocityAccessKey.set("https://custom-develocity-server.com")
+        develocityAccessKey.set("your_base64_encoded_access_key")
         
         // Optional: Configure the query filter to use when querying the Develocity server for
         // builds.  This filter is expressed using the Develocity's advanced search syntax:

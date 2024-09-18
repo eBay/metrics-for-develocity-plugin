@@ -9,7 +9,7 @@ import org.gradle.api.provider.Provider
 /**
  * Utility to help consolidate all path-related logic for the develocity metrics plugin.
  */
-object PathUtil {
+internal object PathUtil {
     private fun summarizerFileName(summarizer: MetricSummarizer<*>) = summarizer.id
 
     /**
@@ -26,8 +26,8 @@ object PathUtil {
         projectLayout: ProjectLayout,
         dateStr: String,
     ): Provider<Directory> = dailyBaseDir(projectLayout).map { dailyBaseDir ->
-            dailyBaseDir.dir(dateStr)
-        }
+        dailyBaseDir.dir(dateStr)
+    }
 
     /**
      * The base directory for all hourly outputs.
