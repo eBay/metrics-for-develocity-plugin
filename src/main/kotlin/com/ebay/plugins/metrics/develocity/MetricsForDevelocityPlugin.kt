@@ -1,5 +1,11 @@
 package com.ebay.plugins.metrics.develocity
 
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.EXTENSION_NAME
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.QUERY_FILTER_PROPERTY
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ALL
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ATTRIBUTE
+import com.ebay.plugins.metrics.develocity.NameUtil.DATETIME_TASK_PATTERN
+import com.ebay.plugins.metrics.develocity.NameUtil.DURATION_TASK_PATTERN
 import com.ebay.plugins.metrics.develocity.projectcost.ProjectCostPlugin
 import com.ebay.plugins.metrics.develocity.service.DevelocityBuildService
 import com.ebay.plugins.metrics.develocity.userquery.UserQueryPlugin
@@ -20,7 +26,7 @@ import javax.inject.Inject
  * Plugin implementation which defines tasks and configurations artifacts which are used to
  * generate aggregate metric data based upon Develocity build scans.
  */
-@Suppress("unused") // False positive
+@Suppress("unused", "UnstableApiUsage") // False positive
 internal class MetricsForDevelocityPlugin @Inject constructor(
     private val providerFactory: ProviderFactory
 ) : Plugin<Any> {
@@ -70,6 +76,8 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
     }
 
     private fun applyProject(project: Project) {
+        project.dependencies.attributesSchema.attribute(SUMMARIZER_ATTRIBUTE)
+
         if (project.parent == null) {
             applyRootProject(project)
         }
@@ -136,10 +144,67 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
         )
 
         /*
+        * Creates a rule for generating consumable configurations for date time requests.
+        * These can be scoped to daily or hourly time specifications.
+        */
+        project.configurations.addRule(
+            "Pattern: ${NameUtil.dateTime("<YYYY>-<MM>-<DD>[T<HH>]")}  " +
+                    "Gathers Develocity metrics for the date (and optionally hour) specified."
+        ) { configurationName ->
+            val matcher = DATETIME_TASK_PATTERN.matcher(configurationName)
+            if (!matcher.matches()) return@addRule
+
+            val date = matcher.group(2)
+            val timeSpec: String = matcher.group(1)
+            val hour: String? = matcher.group(3)
+
+            project.configurations.register(configurationName) { config ->
+                with(config) {
+                    isCanBeConsumed = true
+                    isCanBeResolved = false
+                    isTransitive = false
+                    attributes.attribute(SUMMARIZER_ATTRIBUTE, SUMMARIZER_ALL)
+                }
+            }
+
+            val artifactTaskProvider = if (hour == null) {
+                pluginContext.registerDaily(date)
+            } else {
+                pluginContext.registerHourly(timeSpec)
+            }
+            project.artifacts.add(configurationName, artifactTaskProvider)
+        }
+
+        /*
+         * Creates a rule for generating consumable configurations for duration-based requests.
+         * These can be scoped to specific time duration specifications.
+         */
+        project.configurations.addRule(
+            "Pattern: ${NameUtil.duration("<Java Duration String>")}  " +
+                    "Aggregates Develocity metrics for the current date back in time for the " +
+                    "specified duration."
+        ) { configurationName ->
+            val matcher = DURATION_TASK_PATTERN.matcher(configurationName)
+            if (!matcher.matches()) return@addRule
+
+            val durationStr: String = matcher.group(1)
+            val consumableConfig = project.configurations.register(configurationName)
+            consumableConfig.configure { config ->
+                with(config) {
+                    isCanBeConsumed = true
+                    isCanBeResolved = false
+                    isTransitive = false
+                    attributes.attribute(SUMMARIZER_ATTRIBUTE, SUMMARIZER_ALL)
+                }
+            }
+            project.artifacts.add(configurationName, pluginContext.registerDurationAggregation(durationStr))
+        }
+
+        /*
          * Rule to register a task for a specific date and optionally hour.
          */
         project.tasks.addRule(
-            "Pattern: $TASK_PREFIX-<YYYY>-<MM>-<DD>T[<HH>]  " +
+            "Pattern: ${NameUtil.dateTime("<YYYY>-<MM>-<DD>[T<HH>]")}  " +
                     "Gathers Develocity metrics for the date (and optionally hour) specified."
         ) { taskName ->
             val matcher = DATETIME_TASK_PATTERN.matcher(taskName)
@@ -162,7 +227,7 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
          * Rule to register a task for a time window / duration, relative to the current day and hour.
          */
         project.tasks.addRule(
-            "Pattern: $TASK_PREFIX-last-<Java Duration String>  " +
+            "Pattern: ${NameUtil.duration("<Java Duration String>")}  " +
                     "Aggregates Develocity metrics for the current date back in time for the " +
                     "specified duration."
         ) { taskName ->
@@ -172,14 +237,6 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
             val durationStr: String = matcher.group(1)
             pluginContext.registerDurationAggregation(durationStr)
         }
-
-        ext.extensions.create(
-            INTERNAL_EXTENSION_NAME,
-            MetricsForDevelocityInternalExtension::class.java,
-            { timeSpec: String -> pluginContext.registerHourly(timeSpec) },
-            { dateStr: String -> pluginContext.registerDaily(dateStr) },
-            { durationStr: String -> pluginContext.registerDurationAggregation(durationStr) },
-        )
     }
 
     /*
@@ -187,7 +244,7 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
      * the same task to be registered multiple times without error.
      */
     private fun PluginContext.registerHourly(timeSpec: String): TaskProvider<GatherHourlyTask> {
-        val taskName = "$TASK_PREFIX-$timeSpec"
+        val taskName = NameUtil.dateTime(timeSpec)
         return if (project.tasks.names.contains(taskName)) {
             // task already exists.  Return its TaskProvider.
             project.tasks.named(taskName, GatherHourlyTask::class.java)
@@ -227,7 +284,7 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
      * the same task to be registered multiple times without error.
      */
     private fun PluginContext.registerDaily(dateString: String): TaskProvider<GatherAggregateTask> {
-        val taskName = "$TASK_PREFIX-$dateString"
+        val taskName = NameUtil.dateTime(dateString)
         return if (project.tasks.names.contains(taskName)) {
             // task already exists.  Return its TaskProvider.
             project.tasks.named(taskName, GatherAggregateTask::class.java)
@@ -281,7 +338,7 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
             }
         }.toList()
 
-        val taskName = "$TASK_PREFIX-last-$durationStr"
+        val taskName = NameUtil.duration(durationStr)
         return if (project.tasks.names.contains(taskName)) {
             // task already exists.  Return its TaskProvider.
             project.tasks.named(taskName, GatherAggregateTask::class.java)
@@ -357,25 +414,6 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
     }
 
     companion object {
-        const val EXTENSION_NAME = "metricsForDevelocity"
-        const val INTERNAL_EXTENSION_NAME = "metricsForDevelocityInternal"
-        const val TASK_PREFIX = "metricsForDevelocity"
-        const val TASK_GROUP = "develocity metrics"
-        const val QUERY_FILTER_PROPERTY = "metricsForDevelocityQueryFilter"
-
-        private val DATETIME_TASK_PATTERN = Regex(
-            // Examples:
-            //      metricsForDevelocity-2024-06-01
-            //      metricsForDevelocity-2024-06-01T05
-            "^\\Q$TASK_PREFIX-\\E((\\d{4}-\\d{2}-\\d{2})(?:T(\\d{2}))?)$"
-        ).toPattern()
-
-        private val DURATION_TASK_PATTERN = Regex(
-            // Examples:
-            //      metricsForDevelocity-last-P7D
-            //      metricsForDevelocity-last-PT8H
-            //      metricsForDevelocity-last-P2DT8H
-            "^\\Q$TASK_PREFIX-last-\\E(\\w+)$"
-        ).toPattern()
+        internal const val TASK_GROUP = "develocity metrics"
     }
 }
