@@ -8,7 +8,7 @@ import org.gradle.api.tasks.Input
  * Interface which may be added to a task to have it be auto-configured with the Develocity
  * server configuration as applied to the root project in the [MetricsForDevelocityExtension].
  *
- * NOTE: Access to the Develosity access key is intentionally not provided here, as it is
+ * NOTE: Access to the Develocity access key is intentionally not provided here, as it is
  * would potentially be exposed due to its use as part of the czche key.
  */
 interface DevelocityConfigurationInputs : Task {
