@@ -88,7 +88,6 @@ internal abstract class ProjectCostInspectionTask : DefaultTask(), MetricSummari
                 "$it/s/"
             }
         }
-        println("baseUrl: $baseUrl")
         val projectPathWithDelimiter = projectPath.get().let { if (it == ":") it else "$it:" }
         val buildScansReport = if (data.buildsWithExecution.isEmpty()) {
             "No builds with executed tasks\n\n"
