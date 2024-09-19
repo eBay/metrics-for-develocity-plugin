@@ -1,4 +1,4 @@
-![Gradle Plugin Portal Version](https://img.shields.io/gradle-plugin-portal/v/com.ebay.graph-analytics)
+![Gradle Plugin Portal Version](https://img.shields.io/gradle-plugin-portal/v/com.ebay.metrics-for-develocity)
 
 # Metrics for Develocity Plugin
 
