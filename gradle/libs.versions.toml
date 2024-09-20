@@ -4,7 +4,7 @@ ebay-graphAnalytics = "1.0.0"
 gradle-develocity = "3.18.1"
 gradle-pluginPublish = "1.3.0"
 # https://github.com/Kotlin/kotlinx.serialization/releases
-kotlinx-serializationJson = "1.6.3"
+kotlinx-serializationJson = "1.7.3"
 # https://github.com/ktorio/ktor/releases
 ktor = "2.3.12"
 # https://github.com/OpenAPITools/openapi-generator/releases
