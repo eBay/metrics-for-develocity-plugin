@@ -1,5 +1,7 @@
 package com.ebay.plugins.metrics.develocity
 
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.DEVELOCITY_ACCESS_KEY_PROPERTY
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.DEVELOCITY_SERVER_URL_PROPERTY
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.EXTENSION_NAME
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.QUERY_FILTER_PROPERTY
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ALL
@@ -101,6 +103,11 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
             .apply {
                 zoneId.convention(ZoneId.systemDefault().id)
                 develocityMaxConcurrency.convention(24)
+
+                // NOTE: These conventions are overridden by Develocity plugin logic in the setting plugin portion
+                develocityServerUrl.convention(project.providers.gradleProperty(DEVELOCITY_SERVER_URL_PROPERTY))
+                develocityAccessKey.convention(project.providers.gradleProperty(DEVELOCITY_ACCESS_KEY_PROPERTY))
+
                 develocityQueryFilter.convention(
                     providerFactory.gradleProperty(QUERY_FILTER_PROPERTY)
                         .orElse("project:${project.name}"))

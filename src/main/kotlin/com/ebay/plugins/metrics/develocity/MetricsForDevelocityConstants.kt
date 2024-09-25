@@ -17,6 +17,16 @@ object MetricsForDevelocityConstants {
     const val QUERY_FILTER_PROPERTY = "metricsForDevelocityQueryFilter"
 
     /**
+     *
+     */
+    const val DEVELOCITY_SERVER_URL_PROPERTY = "metricsForDevelocityServerUrl"
+
+    /**
+     *
+     */
+    const val DEVELOCITY_ACCESS_KEY_PROPERTY = "metricsForDevelocityAccessKey"
+
+    /**
      * The variant attribute used to identify what summarizer data is being exported or resolved.  The special
      * value of [SUMMARIZER_ALL] is used will result in a directory contianing all summarizer data.  Consumers
      * can start with this and apply a [SummarizerSelectTransform] to filter down to a single summarizer output.

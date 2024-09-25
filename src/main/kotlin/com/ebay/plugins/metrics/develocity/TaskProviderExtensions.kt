@@ -11,7 +11,6 @@ import org.gradle.api.tasks.TaskProvider
  * Helper function to configure a task's inputs to use the outputs of of metric summarizer,
  * with the summary data spanning the datetime specified.
  */
-@Suppress("UnstableApiUsage")
 fun TaskProvider<out MetricSummarizerTask>.inputsFromDateTime(
     project: Project,
     timeSpec: String,
@@ -31,7 +30,6 @@ fun TaskProvider<out MetricSummarizerTask>.inputsFromDuration(
 /**
  * Common helper configuration for tasks which consume the summarizer output.
  */
-@Suppress("UnstableApiUsage")
 private fun TaskProvider<out MetricSummarizerTask>.configureInputs(
     project: Project,
     inputConfiguration: String,
