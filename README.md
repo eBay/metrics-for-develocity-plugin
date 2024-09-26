@@ -103,7 +103,7 @@ documentation for more information on their purpose and usage:
 The following documents describe various processes needed for operating and/or maintaining
 the plugin:
 - [Run Book: Update the OpenAPI Specification](docs/RunBook-UpdatingOpenApiSpec.md)
-- [Run Book: Release Process](docs/ReleaseProcess.md)
+- [Run Book: Release Process](docs/RunBook-ReleaseProcess.md)
 
 ## References
 
