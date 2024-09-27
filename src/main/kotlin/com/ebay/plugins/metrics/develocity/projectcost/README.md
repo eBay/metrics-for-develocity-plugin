@@ -23,10 +23,15 @@ To generate the report, run the following command, replacing the project module 
 as desired:
 
 ```
-./gradlew :exampleModule:projectCostInspectionReport-P7D
+./gradlew -PmetricsForDevelocityConfigurations=P7D :exampleModule:projectCostInspectionReport-P7D
 ```
 
 Alternate durations may be specified by changing the `-P7D` suffix to the desired duration.
+
+> [!IMPORTANT]
+> To workaround a Gradle configuration issue, all time specifications used in the desired task need
+> to be provided up-front via the `metricsForDevelocityConfigurations` gradle property.  For more
+> information, please refer to the main [README](../../../../../../../../../README.md).
 
 ### Project Cost Graph Analytics Integration
 
