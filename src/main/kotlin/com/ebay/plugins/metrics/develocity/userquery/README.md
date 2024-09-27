@@ -16,8 +16,15 @@ used to provide a string in
 For example: 
 
 ```shell
-./gradlew '-PmetricsForDevelocityQueryFilter=tag:Local' userQueryReport-P7D
+./gradlew -PmetricsForDevelocityConfigurations=P7D \
+    '-PmetricsForDevelocityQueryFilter=tag:Local' \
+    userQueryReport-P7D
 ```
+
+> [!IMPORTANT]
+> To workaround a Gradle configuration issue, all time specifications used in the desired task need
+> to be provided up-front via the `metricsForDevelocityConfigurations` gradle property.  For more
+> information, please refer to the main [README](../../../../../../../../../README.md).
 
 Upon completion, the report will be written to a file based on the task name which was run,
 such as:
