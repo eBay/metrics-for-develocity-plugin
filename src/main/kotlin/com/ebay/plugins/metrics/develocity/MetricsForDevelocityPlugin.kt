@@ -1,6 +1,5 @@
 package com.ebay.plugins.metrics.develocity
 
-import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.DEVELOCITY_ACCESS_KEY_PROPERTY
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.DEVELOCITY_SERVER_URL_PROPERTY
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.EXTENSION_NAME
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.QUERY_FILTER_PROPERTY
@@ -28,7 +27,7 @@ import javax.inject.Inject
  * Plugin implementation which defines tasks and configurations artifacts which are used to
  * generate aggregate metric data based upon Develocity build scans.
  */
-@Suppress("unused", "UnstableApiUsage") // False positive
+@Suppress("unused") // False positive
 internal class MetricsForDevelocityPlugin @Inject constructor(
     private val providerFactory: ProviderFactory
 ) : Plugin<Any> {
@@ -44,6 +43,19 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
     private fun applySettings(settings: Settings) {
         settings.gradle.beforeProject { project ->
             project.plugins.apply(MetricsForDevelocityPlugin::class.java)
+        }
+
+        // If we are using the gradle property to configure the develocity URL, pass this
+        // info into the tasks that may consume it.  This is used in preference to the
+        // value configured by the develocity or gradle enterprise plugins, when applied.
+        settings.providers.gradleProperty(DEVELOCITY_SERVER_URL_PROPERTY).orNull?.let { url ->
+            settings.gradle.beforeProject { project ->
+                project.tasks.withType(DevelocityConfigurationInputs::class.java) { task ->
+                    // `set` instead of `convention` since specification by property value should
+                    // take precedence over the default value.
+                    task.develocityServerUrl.set(url)
+                }
+            }
         }
 
         // Auto-configure the Gradle Enterprise access if the plugin is applied and has been
@@ -62,7 +74,8 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
                 }
                 // Configure tasks wanting to consume the Gradle Enterprise configuration:
                 project.tasks.withType(DevelocityConfigurationInputs::class.java).configureEach { task ->
-                    task.develocityServerUrl.set(gradleExt.server)
+                    // `convention` to allow for possible override by the property value
+                    task.develocityServerUrl.convention(gradleExt.server)
                 }
             }
         }
@@ -79,7 +92,8 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
                 }
                 // Configure tasks wanting to consume the Develocity configuration:
                 project.tasks.withType(DevelocityConfigurationInputs::class.java).configureEach { task ->
-                    task.develocityServerUrl.set(gradleExt.server)
+                    // `convention` to allow for possible override by the property value
+                    task.develocityServerUrl.convention(gradleExt.server)
                 }
             }
         }
@@ -104,9 +118,8 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
                 zoneId.convention(ZoneId.systemDefault().id)
                 develocityMaxConcurrency.convention(24)
 
-                // NOTE: These conventions are overridden by Develocity plugin logic in the setting plugin portion
+                // NOTE: This convention is overridden by Develocity plugin logic in the setting plugin portion
                 develocityServerUrl.convention(project.providers.gradleProperty(DEVELOCITY_SERVER_URL_PROPERTY))
-                develocityAccessKey.convention(project.providers.gradleProperty(DEVELOCITY_ACCESS_KEY_PROPERTY))
 
                 develocityQueryFilter.convention(
                     providerFactory.gradleProperty(QUERY_FILTER_PROPERTY)
@@ -311,7 +324,7 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
                         val currentDayWithHour = currentDayWithHourProvider.get()
                         val day = dateHelper.fromDailyString(dateString)
                         for (interval in 0 until 24) {
-                            val hourInstant = day.plus(interval.toLong(), java.time.temporal.ChronoUnit.HOURS)
+                            val hourInstant = day.plus(interval.toLong(), ChronoUnit.HOURS)
                             val timeSpec = dateHelper.toHourlyString(hourInstant)
 
                             dependsOn(project.provider {
