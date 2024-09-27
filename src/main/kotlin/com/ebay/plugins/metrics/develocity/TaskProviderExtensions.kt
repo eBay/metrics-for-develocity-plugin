@@ -6,6 +6,8 @@ import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARI
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ATTRIBUTE
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.TIME_SPEC_ATTRIBUTE
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 
 /**
@@ -46,30 +48,36 @@ private fun TaskProvider<out MetricSummarizerTask>.configureInputs(
     }
 
     val resolveId = "metricsForDevelocity-$configurationName-resolve"
-    val resolveConfig = project.configurations.register(resolveId)
-    resolveConfig.configure { config ->
-        with(config) {
-            isTransitive = false
-            isCanBeResolved = true
-            isCanBeConsumed = false
-            attributes.attribute(TIME_SPEC_ATTRIBUTE, configurationName)
-            attributes.attribute(SUMMARIZER_ATTRIBUTE, SUMMARIZER_ALL)
+    val existingConfig = project.configurations.findByName(resolveId)
+    val configProvider: Provider<Configuration> = if (existingConfig == null) {
+        val resolveConfig = project.configurations.register(resolveId)
+        resolveConfig.configure { config ->
+            with(config) {
+                isTransitive = false
+                isCanBeResolved = true
+                isCanBeConsumed = false
+                attributes.attribute(TIME_SPEC_ATTRIBUTE, configurationName)
+                attributes.attribute(SUMMARIZER_ATTRIBUTE, SUMMARIZER_ALL)
 
-            dependencies.add(
-                project.dependencies.project(
-                    mapOf(
-                        "path" to ":",
-                        "configuration" to configurationName,
+                dependencies.add(
+                    project.dependencies.project(
+                        mapOf(
+                            "path" to ":",
+                            "configuration" to configurationName,
+                        )
                     )
                 )
-            )
+            }
         }
+        resolveConfig
+    } else {
+        project.provider { existingConfig }
     }
 
     configure { self ->
         with(self) {
-            dependsOn(resolveConfig)
-            summarizerDataProperty.set(resolveConfig.map { cfg ->
+            dependsOn(configProvider)
+            summarizerDataProperty.set(configProvider.map { cfg ->
                 cfg.incoming.artifactView { view ->
                     view.attributes.attribute(SUMMARIZER_ATTRIBUTE, summarizerId)
                 }.files.singleFile
