@@ -17,18 +17,13 @@ object MetricsForDevelocityConstants {
     const val QUERY_FILTER_PROPERTY = "metricsForDevelocityQueryFilter"
 
     /**
-     *
+     * Gradle property which can be used to configure the Develocity server URL.
      */
     const val DEVELOCITY_SERVER_URL_PROPERTY = "metricsForDevelocityServerUrl"
 
     /**
-     *
-     */
-    const val DEVELOCITY_ACCESS_KEY_PROPERTY = "metricsForDevelocityAccessKey"
-
-    /**
      * The variant attribute used to identify what summarizer data is being exported or resolved.  The special
-     * value of [SUMMARIZER_ALL] is used will result in a directory contianing all summarizer data.  Consumers
+     * value of [SUMMARIZER_ALL] is used will result in a directory containing all summarizer data.  Consumers
      * can start with this and apply a [SummarizerSelectTransform] to filter down to a single summarizer output.
      */
     val SUMMARIZER_ATTRIBUTE = Attribute.of("com.ebay.metrics-for-develocity.summarizer", String::class.java)
