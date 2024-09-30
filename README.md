@@ -24,7 +24,7 @@ The plugin is designed to work with Gradle 8.8 or later.
 To enable the plugin, add the following to your project's `settings.gradle.kts` file:
 ```kotlin
 plugins {
-    id("com.gradle.metrics-for-develocity") version("<current version goes here>")
+    id("com.ebay.metrics-for-develocity") version("<current version goes here>")
 }
 ```
 
