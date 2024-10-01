@@ -51,6 +51,10 @@ extensions.configure<MetricsForDevelocityExtension> {
         // If no value is configured for this property then the Develocity key will be searched
         // for in the standard locations for manual key provisioning, documented here:
         // https://docs.gradle.com/develocity/gradle-plugin/current/#manual_access_key_configuration
+        //
+        // If no Develocity plugin is applied, the value may also be set by defining a
+        // value for the `metricsForDevelocityAccessKey` gradle property.  If this approach
+        // is used, take care to ensure that the access key is not captured in the build scan.
         develocityAccessKey.set("your_base64_encoded_access_key")
         
         // Optional: Configure the query filter to use when querying the Develocity server for
@@ -85,14 +89,6 @@ which use the following forms:
   - `metricsForDevelocity-last-P2DT8H`: Queries all builds within the last 2 days and 8 hours.
   NOTE: When running queries which span multiple days, the plugin will automatically adjust the
   starting point to the beginning of the day if the start day is 7 days or more in the past.
-
-> [!IMPORTANT]
-> Due to a Gradle configuration issue, all time specifications used in the desired task(s) need
-> to be provided up-front via the `metricsForDevelocityConfigurations` gradle property, in a
-> comma delimited list.  For example, if running both the `metricsForDevelocity-last-PT8H` and
-> `metricsForDevelocity-2024-06-01T04` tasks, the following would be required:
-> `-PmetricsForDevelocityConfigurations=PT8H,2024-06-01T04`.  This is a workaround and is not
-> expected to be a permanent requirement of the plugin.
 
 ## Provided Summarizers
 
