@@ -3,17 +3,12 @@ package com.ebay.plugins.metrics.develocity
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.DEVELOCITY_SERVER_URL_PROPERTY
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.EXTENSION_NAME
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.QUERY_FILTER_PROPERTY
-import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ALL
-import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ATTRIBUTE
-import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUPPORTED_CONFIGURATION_PROPERTIES
-import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.TIME_SPEC_ATTRIBUTE
 import com.ebay.plugins.metrics.develocity.NameUtil.DATETIME_TASK_PATTERN
 import com.ebay.plugins.metrics.develocity.NameUtil.DURATION_TASK_PATTERN
 import com.ebay.plugins.metrics.develocity.projectcost.ProjectCostPlugin
 import com.ebay.plugins.metrics.develocity.service.DevelocityBuildService
 import com.ebay.plugins.metrics.develocity.userquery.UserQueryPlugin
 import com.gradle.develocity.agent.gradle.DevelocityConfiguration
-import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.initialization.Settings
@@ -103,8 +98,6 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
     }
 
     private fun applyProject(project: Project) {
-        project.dependencies.attributesSchema.attribute(SUMMARIZER_ATTRIBUTE)
-
         if (project.parent == null) {
             applyRootProject(project)
         }
@@ -174,42 +167,6 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
             ext,
         )
 
-        // As a workaround, pre-register configurations based upon a comma-delimited list of
-        // time specifications provided via gradle property.
-        project.providers.gradleProperty(SUPPORTED_CONFIGURATION_PROPERTIES).orNull?.let { propVal ->
-            propVal.split(",").forEach { configurationName ->
-                if (!pluginContext.registerConfigurationTimeSpec(configurationName)) {
-                    throw GradleException("Unable to parse time spec: $configurationName\n" +
-                            "\tSupported patterns:\n" +
-                            "\t\t'${DATETIME_TASK_PATTERN.pattern()}'\n" +
-                            "\t\t'${DURATION_TASK_PATTERN.pattern()}' (group 1 parsed as a Java duration)")
-                }
-            }
-        }
-
-        /*
-        * Creates a rule for generating consumable configurations for date time requests.
-        * These can be scoped to daily or hourly time specifications.
-        */
-        project.configurations.addRule(
-            "Pattern: ${NameUtil.dateTime("<YYYY>-<MM>-<DD>[T<HH>]")}  " +
-                    "Gathers Develocity metrics for the date (and optionally hour) specified."
-        ) { configurationName ->
-            pluginContext.registerDateTimeConfiguration(configurationName)
-        }
-
-        /*
-         * Creates a rule for generating consumable configurations for duration-based requests.
-         * These can be scoped to specific time duration specifications.
-         */
-        project.configurations.addRule(
-            "Pattern: ${NameUtil.duration("<Java Duration String>")}  " +
-                    "Aggregates Develocity metrics for the current date back in time for the " +
-                    "specified duration."
-        ) { configurationName ->
-            pluginContext.registerDurationConfiguration(configurationName)
-        }
-
         /*
          * Rule to register a task for a specific date and optionally hour.
          */
@@ -247,66 +204,14 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
             val durationStr: String = matcher.group(1)
             pluginContext.registerDurationAggregation(durationStr)
         }
-    }
 
-    private fun PluginContext.registerConfigurationTimeSpec(timeSpec: String): Boolean {
-        val dateTimeName = NameUtil.dateTime(timeSpec)
-        val durationName = NameUtil.duration(timeSpec)
-        return registerDateTimeConfiguration(dateTimeName)
-                || registerDurationConfiguration(durationName)
-    }
-
-    private fun PluginContext.registerDateTimeConfiguration(configurationName: String): Boolean {
-        val matcher = DATETIME_TASK_PATTERN.matcher(configurationName)
-        if (!matcher.matches()) return false
-
-        val date = matcher.group(2)
-        val timeSpec: String = matcher.group(1)
-        val hour: String? = matcher.group(3)
-
-        project.configurations.register(configurationName) { config ->
-            with(config) {
-                isCanBeConsumed = true
-                isCanBeResolved = false
-                isTransitive = false
-                attributes.attribute(TIME_SPEC_ATTRIBUTE, timeSpec)
-                attributes.attribute(SUMMARIZER_ATTRIBUTE, SUMMARIZER_ALL)
-            }
-        }
-
-        val artifactTaskProvider = if (hour == null) {
-            registerDaily(date)
-        } else {
-            registerHourly(timeSpec)
-        }
-        project.artifacts.add(configurationName, artifactTaskProvider)
-        return true
-    }
-
-    private fun PluginContext.registerDurationConfiguration(configurationName: String): Boolean {
-        val matcher = DURATION_TASK_PATTERN.matcher(configurationName)
-        if (!matcher.matches()) return false
-
-        val durationStr: String = matcher.group(1)
-
-        // Attempt to parse the duration string to ensure it is valid, prior to configuration
-        // registration.
-        val taskProvider = runCatching {
-            registerDurationAggregation(durationStr)
-        }.getOrNull() ?: return false
-
-        val consumableConfig = project.configurations.register(configurationName)
-        consumableConfig.configure { config ->
-            with(config) {
-                isCanBeConsumed = true
-                isCanBeResolved = false
-                isTransitive = false
-                attributes.attribute(TIME_SPEC_ATTRIBUTE, configurationName)
-                attributes.attribute(SUMMARIZER_ATTRIBUTE, SUMMARIZER_ALL)
-            }
-        }
-        project.artifacts.add(configurationName, taskProvider)
-        return true
+        ext.extensions.create(
+            INTERNAL_EXTENSION_NAME,
+            MetricsForDevelocityInternalExtension::class.java,
+            { timeSpec: String -> pluginContext.registerHourly(timeSpec) },
+            { dateStr: String -> pluginContext.registerDaily(dateStr) },
+            { durationStr: String -> pluginContext.registerDurationAggregation(durationStr) },
+        )
     }
 
     /*
@@ -484,6 +389,6 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
     }
 
     companion object {
-        internal const val TASK_GROUP = "develocity metrics"
+        internal const val INTERNAL_EXTENSION_NAME = "metricsForDevelocityInternal"
     }
 }

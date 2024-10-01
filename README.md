@@ -86,14 +86,6 @@ which use the following forms:
   NOTE: When running queries which span multiple days, the plugin will automatically adjust the
   starting point to the beginning of the day if the start day is 7 days or more in the past.
 
-> [!IMPORTANT]
-> Due to a Gradle configuration issue, all time specifications used in the desired task(s) need
-> to be provided up-front via the `metricsForDevelocityConfigurations` gradle property, in a
-> comma delimited list.  For example, if running both the `metricsForDevelocity-last-PT8H` and
-> `metricsForDevelocity-2024-06-01T04` tasks, the following would be required:
-> `-PmetricsForDevelocityConfigurations=PT8H,2024-06-01T04`.  This is a workaround and is not
-> expected to be a permanent requirement of the plugin.
-
 ## Provided Summarizers
 
 This plugin ships with two example summarizer implementations which can be used as-is or
