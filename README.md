@@ -51,10 +51,6 @@ extensions.configure<MetricsForDevelocityExtension> {
         // If no value is configured for this property then the Develocity key will be searched
         // for in the standard locations for manual key provisioning, documented here:
         // https://docs.gradle.com/develocity/gradle-plugin/current/#manual_access_key_configuration
-        //
-        // If no Develocity plugin is applied, the value may also be set by defining a
-        // value for the `metricsForDevelocityAccessKey` gradle property.  If this approach
-        // is used, take care to ensure that the access key is not captured in the build scan.
         develocityAccessKey.set("your_base64_encoded_access_key")
         
         // Optional: Configure the query filter to use when querying the Develocity server for
