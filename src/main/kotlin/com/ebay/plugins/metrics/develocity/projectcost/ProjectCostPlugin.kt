@@ -83,15 +83,15 @@ internal class ProjectCostPlugin @Inject constructor(
 
         val projectCostGraphAnalysis = providerFactory.gradleProperty(GRAPH_ANALYSIS_ENABLED_PROPERTY).orNull.toBoolean()
         if (projectCostGraphAnalysis) {
-            val reportDuration = providerFactory.gradleProperty(GRAPH_ANALYSIS_DURATION_PROPERTY).orElse("P7D").get()
-            val reportTaskProvider = reportTaskProviderFun.invoke(reportDuration)
-            val graphAnalysisTask = project.tasks.register("projectCostGraphAnalysis-$reportDuration", ProjectCostGraphAnalysisTask::class.java)
-            graphAnalysisTask.configure { task ->
-                with(task) {
-                    projectReportProperty.set(reportTaskProvider.flatMap { it.reportFile })
-                }
-            }
             project.plugins.withId("com.ebay.graph-analytics") {
+                val reportDuration = providerFactory.gradleProperty(GRAPH_ANALYSIS_DURATION_PROPERTY).orElse("P7D").get()
+                val reportTaskProvider = reportTaskProviderFun.invoke(reportDuration)
+                val graphAnalysisTask = project.tasks.register("projectCostGraphAnalysis-$reportDuration", ProjectCostGraphAnalysisTask::class.java)
+                graphAnalysisTask.configure { task ->
+                    with(task) {
+                        projectReportProperty.set(reportTaskProvider.flatMap { it.reportFile })
+                    }
+                }
                 project.extensions.getByType(GraphExtension::class.java).apply {
                     analysisTasks.add(graphAnalysisTask)
                 }
