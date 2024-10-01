@@ -35,14 +35,17 @@ performed by the [eBay Graph Analytics Plugin](https://github.com/eBay/graph-ana
 This integration allows for the resulting project graph data to include the execution-time
 costs for each project module, granting a more comprehensive picture of the project's build.
 
-To enable the integration, the gradle property `projectCostGraphAnalysisEnabled` must be
-set to `true`.  Since the data gathering phase for the project cost summarizer can be quite
-expensive to gather, it is recommended to run this integration in a dedicated job.
+To enable the integration, the following must be done:
+- The gradle property `projectCostGraphAnalysisEnabled` must be set to `true`.  This activates the code
+  which performs the integration work.
+- The `graph-analytics-plugin` must be (separately) applied to the project.  This makes the implementation
+  available to the project, allowing the integration to be performed.
+- The `projectCostGraphAnalysisDuration` property may be set to a valid Java time duration string.
+  This specifies the duration of time over which the project cost data will be aggregated.  If not
+  specified, the default value of `P7D` (7 days) will be used.
 
-Additionally, since the project cost reporting aggregates data over a period of time, the
-duration for the report must be specified.  This is done by setting the
-`projectCostGraphAnalysisDuration` property to a Java time duration string.  If not specified,
-data form the last 7 days will be used.
+Since the data gathering phase for the project cost summarizer can be quite
+expensive to gather, it is recommended to run this integration in a dedicated job.
 
 Putting it all together, the following command can be used to generate a graph analysis
 incorporating the project cost data over a custom time range of 3 days:
