@@ -39,7 +39,7 @@ internal abstract class ProjectCostInspectionTask : DefaultTask(), MetricSummari
                 separator = "\n\t",
                 postfix = "\n\n"
             ) {
-                "${it.second} ms -- ${it.first} ms"
+                "${it.second} ms -- ${it.first}"
             }
         val topTasksByExecutions = data.taskNameToData.asSequence()
             .map { (taskName, taskData) ->
@@ -59,7 +59,7 @@ internal abstract class ProjectCostInspectionTask : DefaultTask(), MetricSummari
                 separator = "\n\t",
                 postfix = "\n\n"
             ) {
-                "${it.second} ms -- ${it.first} ms"
+                "${it.second} ms -- ${it.first}"
             }
         val topTypesByExecutions = data.taskTypeToData.asSequence()
             .map { (taskType, taskData) ->
