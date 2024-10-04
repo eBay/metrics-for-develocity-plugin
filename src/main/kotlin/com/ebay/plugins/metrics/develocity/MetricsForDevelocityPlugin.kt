@@ -59,6 +59,12 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
         // Auto-configure the Gradle Enterprise access if the plugin is applied and has been
         // directly configured with a server URL and/or access key.
         settings.plugins.withId("com.gradle.enterprise") {
+            // The Develocity plugin is also registered under this ID so we need to avoid running
+            // this logic when this is the case.
+            if (settings.plugins.hasPlugin("com.gradle.develocity")) {
+                return@withId
+            }
+
             @Suppress("DEPRECATION") // GradleEnterpriseExtension is deprecated
             val gradleExt = settings.extensions.getByType(com.gradle.enterprise.gradleplugin.GradleEnterpriseExtension::class.java)
             settings.gradle.afterProject { project ->
