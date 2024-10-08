@@ -8,7 +8,7 @@ kotlinx-serializationJson = "1.6.3"
 # https://github.com/ktorio/ktor/releases
 ktor = "2.3.12"
 # https://github.com/OpenAPITools/openapi-generator/releases
-openapi-generator = "7.8.0"
+openapi-generator = "7.9.0"
 
 [libraries]
 gradle-develocity = { module = "com.gradle:develocity-gradle-plugin", version.ref = "gradle-develocity" }
