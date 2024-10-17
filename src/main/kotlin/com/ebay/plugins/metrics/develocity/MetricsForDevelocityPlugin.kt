@@ -253,6 +253,7 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
                         summarizersProperty.set(ext.summarizers)
                         develocityServiceProperty.set(buildServiceProvider)
                         outputDirectoryProperty.set(PathUtil.hourlyOutputDir(project.layout, timeSpec))
+                        maxConcurrencyProperty.set(ext.develocityMaxConcurrency)
                         usesService(buildServiceProvider)
                     }
                 }

@@ -1,9 +1,8 @@
 package com.ebay.plugins.metrics.develocity.service
 
-import com.ebay.plugins.metrics.develocity.service.model.Build
-import com.ebay.plugins.metrics.develocity.service.model.BuildQuery
-import com.ebay.plugins.metrics.develocity.service.model.BuildsQuery
-import io.ktor.client.statement.HttpResponse
+import com.gabrielfeo.develocity.api.model.Build
+import com.gabrielfeo.develocity.api.model.BuildQuery
+import com.gabrielfeo.develocity.api.model.BuildsQuery
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -15,7 +14,7 @@ interface DevelocityService {
      *
      * https://docs.gradle.com/enterprise/api-manual/ref/2022.4.html#operation/GetBuilds
      */
-    suspend fun builds(params: BuildsQuery, errorHandler: (response: HttpResponse) -> Unit = { _ -> }): Flow<Build>
+    suspend fun builds(params: BuildsQuery): Flow<Build>
 
     /**
      * Get build details for the build with the given ID.
@@ -23,7 +22,6 @@ interface DevelocityService {
     suspend fun <T> build(
         buildId: String,
         params: BuildQuery,
-        errorHandler: (response: HttpResponse) -> Unit = { _ -> },
         transform: (Build) -> T,
     ): T?
 

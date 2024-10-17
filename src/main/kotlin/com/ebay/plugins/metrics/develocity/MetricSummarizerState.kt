@@ -1,6 +1,6 @@
 package com.ebay.plugins.metrics.develocity
 
-import com.ebay.plugins.metrics.develocity.service.model.Build
+import com.gabrielfeo.develocity.api.model.Build
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
 
@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicReference
  * Helper which manages the state of a single summarizer.
  *
  * This helps us work around generic erasure issues by consolidating the type of all
- * calls made to a single sumamrizer into a single class.
+ * calls made to a single summarizer into a single class.
  */
 internal class MetricSummarizerState<T>(
     val summarizer: MetricSummarizer<T>,
@@ -18,7 +18,7 @@ internal class MetricSummarizerState<T>(
     /**
      * Update the current state with the given intermediate data.
      */
-    tailrec fun update(intermediate: T) {
+    private tailrec fun update(intermediate: T) {
         val state = stateRef.get()
         val success = if (state == null) {
             stateRef.compareAndSet(null, intermediate)
@@ -44,9 +44,7 @@ internal class MetricSummarizerState<T>(
      * reducing it with the current state.
      */
     fun ingestFile(file: File) {
-        summarizer.read(file).let { intermediate ->
-            update(intermediate)
-        }
+        update(summarizer.read(file))
     }
 
     /**
@@ -57,5 +55,12 @@ internal class MetricSummarizerState<T>(
         stateRef.get()?.let {
             summarizer.write(it, file)
         }
+    }
+
+    /**
+     * Provide a [String] representation which is a bit more useful for debugging.
+     */
+    override fun toString(): String {
+        return "${javaClass.simpleName}(summarizer=${summarizer.id})"
     }
 }
