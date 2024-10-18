@@ -1,9 +1,9 @@
 package com.ebay.plugins.metrics.develocity.projectcost
 
 import com.ebay.plugins.metrics.develocity.MetricSummarizer
-import com.ebay.plugins.metrics.develocity.service.model.Build
-import com.ebay.plugins.metrics.develocity.service.model.BuildModelName
-import com.ebay.plugins.metrics.develocity.service.model.GradleBuildCachePerformanceTaskExecutionEntry
+import com.gabrielfeo.develocity.api.model.Build
+import com.gabrielfeo.develocity.api.model.BuildModelName
+import com.gabrielfeo.develocity.api.model.GradleBuildCachePerformanceTaskExecutionEntry
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -28,8 +28,8 @@ class ProjectCostSummarizer(
 ): MetricSummarizer<ProjectCostSummary>() {
     override val id = ID
     override val modelsNeeded = setOf(
-        BuildModelName.GRADLE_MINUS_ATTRIBUTES,
-        BuildModelName.GRADLE_MINUS_BUILD_MINUS_CACHE_MINUS_PERFORMANCE,
+        BuildModelName.gradleAttributes,
+        BuildModelName.gradleBuildCachePerformance,
     )
 
     private val serializer by lazy {
@@ -80,9 +80,9 @@ class ProjectCostSummarizer(
                 val taskName = taskPath.substringAfterLast(":")
                 projectPathToData.compute(projectPath) { _, existing ->
                     val didWork = when (avoidanceOutcome) {
-                        GradleBuildCachePerformanceTaskExecutionEntry.AvoidanceOutcome.EXECUTED_NOT_CACHEABLE,
-                        GradleBuildCachePerformanceTaskExecutionEntry.AvoidanceOutcome.EXECUTED_UNKNOWN_CACHEABILITY,
-                        GradleBuildCachePerformanceTaskExecutionEntry.AvoidanceOutcome.EXECUTED_CACHEABLE -> {
+                        GradleBuildCachePerformanceTaskExecutionEntry.AvoidanceOutcome.executedNotCacheable,
+                        GradleBuildCachePerformanceTaskExecutionEntry.AvoidanceOutcome.executedUnknownCacheability,
+                        GradleBuildCachePerformanceTaskExecutionEntry.AvoidanceOutcome.executedCacheable -> {
                             if (excludedTaskNames.contains(taskName)) {
                                 0L
                             } else {

@@ -1,5 +1,0 @@
-{
-  "enumPropertyNaming": "UPPERCASE",
-  "serializationLibrary": "kotlinx_serialization",
-  "dateLibrary": "string"
-}

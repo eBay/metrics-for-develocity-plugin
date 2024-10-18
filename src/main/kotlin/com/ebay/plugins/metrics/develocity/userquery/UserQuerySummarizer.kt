@@ -1,8 +1,8 @@
 package com.ebay.plugins.metrics.develocity.userquery
 
 import com.ebay.plugins.metrics.develocity.MetricSummarizer
-import com.ebay.plugins.metrics.develocity.service.model.Build
-import com.ebay.plugins.metrics.develocity.service.model.BuildModelName
+import com.gabrielfeo.develocity.api.model.Build
+import com.gabrielfeo.develocity.api.model.BuildModelName
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -22,10 +22,10 @@ class UserQuerySummarizer(
 ): MetricSummarizer<UserQuerySummary>() {
     override val id = ID
     override val modelsNeeded = setOf(
-        BuildModelName.GRADLE_MINUS_ATTRIBUTES,
+        BuildModelName.gradleAttributes,
     )
 
-    val serializer by lazy {
+    private val serializer by lazy {
         UserQuerySummary.serializer()
     }
 

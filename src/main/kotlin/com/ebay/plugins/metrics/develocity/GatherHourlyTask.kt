@@ -1,16 +1,21 @@
 package com.ebay.plugins.metrics.develocity
 
 import com.ebay.plugins.metrics.develocity.service.DevelocityService
-import com.ebay.plugins.metrics.develocity.service.model.BuildQuery
-import com.ebay.plugins.metrics.develocity.service.model.BuildsQuery
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
+import com.gabrielfeo.develocity.api.model.Build
+import com.gabrielfeo.develocity.api.model.BuildModelName
+import com.gabrielfeo.develocity.api.model.BuildQuery
+import com.gabrielfeo.develocity.api.model.BuildsQuery
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
@@ -26,7 +31,10 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
+import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Task implementation which queries Develocity to gather build data for a single hour.  The data
@@ -72,82 +80,45 @@ open class GatherHourlyTask @Inject constructor(
         DevelocityService::class.java)
 
     @get:Internal
+    val maxConcurrencyProperty: Property<Int> = objectFactory.property(Int::class.java)
+
+    @get:Internal
     override val summarizersProperty: ListProperty<MetricSummarizer<*>> = objectFactory.listProperty(MetricSummarizer::class.java)
 
     @get:OutputDirectory
     override val outputDirectoryProperty: DirectoryProperty = objectFactory.directoryProperty()
 
+    private val refCount = AtomicInteger()
+    private val processedCount = AtomicInteger()
+
     @TaskAction
     fun gather() {
-        val zone = ZoneId.of(zoneIdProperty.get())
-        val startPretty = OffsetDateTime.ofInstant(Instant.ofEpochMilli(startProperty.get()), zone)
-        val endPretty = OffsetDateTime.ofInstant(Instant.ofEpochMilli(endExclusiveProperty.get()).minusMillis(1), zone)
-        val service = develocityServiceProperty.get()
         val summarizers = summarizersProperty.get()
 
-        // Build an advanced syntax filter query
-        val dateFormatter = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of(ZoneOffset.UTC.id))
-        val fromFormatted = dateFormatter.format(startPretty)
-        val toFormatted = dateFormatter.format(endPretty)
-        val timeQuery = "buildStartTime:[$fromFormatted to $toFormatted]"
-        val queryFilter = queryProperty.get()
-        val queryString = if (queryFilter.isNullOrBlank()) {
-            timeQuery
-        } else {
-            "$timeQuery and ($queryFilter)"
-        }
-
-        // Fail task execution if we receive any error responses
-        val errorHandler: (response: HttpResponse) -> Unit = {
-            runBlocking {
-                throw GradleException("Failed to get builds: ${it.call.response.status}${System.lineSeparator()}\t${it.call.response.bodyAsText()}")
-            }
-        }
-
-        // Determine the complete set of models that the summarizers will need
-        val modelsNeeded = summarizers
-            .flatMap { it.modelsNeeded }
-            .toSet()
-            .toList()
-            .takeIf { it.isNotEmpty() }
-
         runBlocking(Dispatchers.Default) {
-            // First, query for all the builds but don't return any details
-            val buildsQuery = BuildsQuery(
-                fromInstant = startProperty.get(),
-                maxBuilds = 1000,
-                query = queryString,
-            )
-            service.builds(buildsQuery, errorHandler)
-            val buildRefs = service.builds(buildsQuery, errorHandler).toList().also {
-                if (it.size == 1000) {
-                    throw GradleException("Too many builds! Need to implement paging-based querying!")
-                }
-            }
-
             // Initialize our summarizers
             val summarizerStates = summarizers.map { MetricSummarizerState(it) }
 
-            buildRefs
-                .map { buildRef ->
-                    // Process each build in parallel
-                    launch {
-                        val detailsQuery = BuildQuery(
-                            models = modelsNeeded
-                        )
-                        // NOTE: The concurrency here is limited by the [DevelocityService]
-                        // implementation and is how we control memory utilization.
-                        service.build(buildRef.id, detailsQuery, errorHandler) { build ->
-                            summarizerStates.forEach { state ->
-                                state.ingestBuild(build)
-                            }
-                        }
-                    }
-                }
-                .map {
-                    // Wait for all jobs to complete
-                    it.join()
-                }
+            // Determine the complete set of models that the summarizers will need
+            val modelsNeeded = summarizers
+                .flatMap { it.modelsNeeded }
+                .toSet()
+                .toList()
+                .takeIf { it.isNotEmpty() }
+            require(modelsNeeded != null) {
+                "No models needed by the summarizers"
+            }
+
+            // Create a pipeline to query and process the builds
+            val startTime = System.currentTimeMillis()
+            val channel = Channel<Build>(capacity = maxConcurrencyProperty.get() * 2)
+            val statsJob = logPeriodicStats(startTime)
+            produceBuildRefs(channel)
+            (1..maxConcurrencyProperty.get()).map {
+                consumeBuildRef(channel, modelsNeeded, summarizerStates)
+            }.forEach { it.join() }
+            statsJob.cancel()
+            logCurrentStats(startTime)
 
             // Write the reduced results to disk
             val outputDirectory = outputDirectoryProperty.get()
@@ -156,5 +127,92 @@ open class GatherHourlyTask @Inject constructor(
                 state.write(outputFile.asFile)
             }
         }
+    }
+
+    /**
+     * Launches a coroutine which queries for all builds satisfying the query filter and
+     * time bounds, sending the resulting [Build] objects to the provided channel.
+     */
+    private fun CoroutineScope.produceBuildRefs(channel: Channel<Build>) {
+        launch {
+            val zone = ZoneId.of(zoneIdProperty.get())
+            val startPretty =
+                OffsetDateTime.ofInstant(Instant.ofEpochMilli(startProperty.get()), zone)
+            val endPretty = OffsetDateTime.ofInstant(
+                Instant.ofEpochMilli(endExclusiveProperty.get()).minusMillis(1), zone
+            )
+
+            // Build an advanced syntax filter query
+            val dateFormatter = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of(ZoneOffset.UTC.id))
+            val fromFormatted = dateFormatter.format(startPretty)
+            val toFormatted = dateFormatter.format(endPretty)
+            val timeQuery = "buildStartTime:[$fromFormatted to $toFormatted]"
+            val queryFilter = queryProperty.get()
+            val queryString = if (queryFilter.isNullOrBlank()) {
+                timeQuery
+            } else {
+                "$timeQuery and ($queryFilter)"
+            }
+
+            val buildsQuery = BuildsQuery(
+                fromInstant = startProperty.get(),
+                query = queryString,
+            )
+            develocityServiceProperty.get().builds(buildsQuery).collect {
+                refCount.incrementAndGet()
+                channel.send(it)
+            }
+            channel.close()
+        }
+    }
+
+    /**
+     * Launches a coroutine to consume [Build] objects from the provided channel, querying
+     * for full build details and processing them, updating the state of the summarizers.
+     */
+    private fun CoroutineScope.consumeBuildRef(
+        channel: ReceiveChannel<Build>,
+        modelsNeeded: List<BuildModelName>,
+        summarizerStates: List<MetricSummarizerState<*>>,
+    ): Job {
+        return launch {
+            val detailsQuery = BuildQuery(
+                models = modelsNeeded
+            )
+            channel.consumeEach { buildRef ->
+                develocityServiceProperty.get().build(buildRef.id, detailsQuery) { build ->
+                    summarizerStates.forEach { state ->
+                        state.ingestBuild(build)
+                    }
+                    processedCount.incrementAndGet()
+                }
+            }
+        }
+    }
+
+    /**
+     * Launches a coroutine to periodically log the current processing statistics.
+     */
+    private fun CoroutineScope.logPeriodicStats(startTime: Long): Job {
+        return launch {
+            while (isActive) {
+                delay(10.seconds)
+                logCurrentStats(startTime)
+            }
+        }
+    }
+
+    /**
+     * Logs the current processing statistics.
+     */
+    private fun logCurrentStats(startTime: Long) {
+        val processedSoFar = processedCount.get()
+        val elapsedSeconds = (System.currentTimeMillis() - startTime) / 1000.0
+        val rate = if (elapsedSeconds == 0.0) {
+            "Rate N/A"
+        } else {
+            "%.2f / second".format(processedSoFar / elapsedSeconds)
+        }
+        logger.info("Processed $processedSoFar build(s) in ${elapsedSeconds.roundToInt()} second(s): $rate")
     }
 }

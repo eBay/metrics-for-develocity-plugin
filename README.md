@@ -98,7 +98,6 @@ documentation for more information on their purpose and usage:
 
 The following documents describe various processes needed for operating and/or maintaining
 the plugin:
-- [Run Book: Update the OpenAPI Specification](docs/RunBook-UpdatingOpenApiSpec.md)
 - [Run Book: Release Process](docs/RunBook-ReleaseProcess.md)
 
 ## References
@@ -108,6 +107,15 @@ the plugin:
 API Manual: https://docs.gradle.com/enterprise/api-manual/
 API Documentation: https://docs.gradle.com/enterprise/api-manual/ref/2022.4.html
 
-## License
+### Gabriel Féo's `develocity-api-kotlin` Library
 
-Apache 2.0 - See [LICENSE](LICENSE.txt) for more information.
+This plugin uses the `develocity-api-kotlin` library to interact with the Develocity API
+rather than generating its own OpenAPI client.
+
+Repository: https://github.com/gabrielfeo/develocity-api-kotlin
+Kotlin API Documentation: https://gabrielfeo.github.io/develocity-api-kotlin/
+
+## Licenses
+
+This project is licensed under the Apache 2.0 but incorporates work which is licensed under
+the MIT license.  Please refer to the [LICENSES.md](LICENSES.md) file for more information. 

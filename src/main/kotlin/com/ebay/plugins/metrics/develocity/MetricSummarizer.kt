@@ -1,7 +1,7 @@
 package com.ebay.plugins.metrics.develocity
 
-import com.ebay.plugins.metrics.develocity.service.model.Build
-import com.ebay.plugins.metrics.develocity.service.model.BuildModelName
+import com.gabrielfeo.develocity.api.model.Build
+import com.gabrielfeo.develocity.api.model.BuildModelName
 import java.io.File
 
 /**

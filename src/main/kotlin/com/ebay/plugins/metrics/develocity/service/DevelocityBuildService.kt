@@ -1,38 +1,27 @@
 package com.ebay.plugins.metrics.develocity.service
 
-import com.ebay.plugins.metrics.develocity.service.model.Build
-import com.ebay.plugins.metrics.develocity.service.model.BuildQuery
-import com.ebay.plugins.metrics.develocity.service.model.BuildsQuery
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerTokens
-import io.ktor.client.plugins.auth.providers.bearer
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.get
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.request
-import io.ktor.http.isSuccess
-import io.ktor.serialization.kotlinx.json.json
+import com.gabrielfeo.develocity.api.Config
+import com.gabrielfeo.develocity.api.DevelocityApi
+import com.gabrielfeo.develocity.api.extension.getBuildsFlow
+import com.gabrielfeo.develocity.api.model.Build
+import com.gabrielfeo.develocity.api.model.BuildQuery
+import com.gabrielfeo.develocity.api.model.BuildsQuery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import okhttp3.Dispatcher
+import okhttp3.ConnectionPool
+import okhttp3.OkHttpClient
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.services.BuildService
 import java.net.URI
 import java.util.Properties
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.toJavaDuration
 
 /**
  * Gradle shared build service implementation which provides access to the Develocity API.
@@ -43,112 +32,64 @@ import kotlin.time.toJavaDuration
 abstract class DevelocityBuildService @Inject constructor(
     private val providerFactory: ProviderFactory
 ): BuildService<DevelocityBuildServiceParameters>, DevelocityService, AutoCloseable {
-    private val logger = Logging.getLogger(javaClass.simpleName)
-
     private val serverUrl by lazy { resolveServer() }
 
     private val accessKey by lazy { resolveAccessKey(serverUrl) }
 
-    private val baseUrl = serverUrl.removeSuffix("/")
+    private val baseUrl = serverUrl.removeSuffix("/").plus("/api/")
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val dispatcher by lazy {
         Dispatchers.IO.limitedParallelism(parameters.maxConcurrency.get())
     }
 
-    private val client by lazy {
-        HttpClient(OkHttp) {
-            engine {
-                config {
-                    dispatcher(Dispatcher().apply {
-                        // This controls the total concurrency of processing samples
-                        maxRequestsPerHost = parameters.maxConcurrency.get()
-                    })
-                    connectTimeout(5.minutes.toJavaDuration())
-                    readTimeout(5.minutes.toJavaDuration())
-                    writeTimeout(5.minutes.toJavaDuration())
-                }
-            }
-            install(Auth) {
-                bearer {
-                    loadTokens {
-                        BearerTokens(accessKey, accessKey)
-                    }
-                }
-            }
-            install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                })
-            }
-        }
+    private val api by lazy {
+        DevelocityApi.newInstance(Config(
+            apiUrl = baseUrl,
+            apiToken = ::accessKey,
+            // NOTE: We have to define our own OkHttp client here.  If we don't then it will attempt
+            // to reuse the same client for all service instances, but we explicitly shut down the
+            // client when the service is closed, causing the next build from the configuration cache
+            // to fail.
+            clientBuilder = OkHttpClient.Builder()
+                .connectionPool(ConnectionPool(5, 1, TimeUnit.MINUTES)),
+            maxConcurrentRequests = parameters.maxConcurrency.get(),
+            logLevel = "debug",
+            readTimeoutMillis = 5.minutes.inWholeMilliseconds,
+        ))
     }
 
     override fun close() {
-        client.close()
+        api.shutdown()
     }
 
     override suspend fun builds(
         params: BuildsQuery,
-        errorHandler: (response: HttpResponse) -> Unit
     ): Flow<Build> = withContext(dispatcher) {
-        return@withContext flow {
-            val response = client.get("$baseUrl/api/builds") {
-                url {
-                    params.fromInstant?.let { parameters.append("fromInstant", it.toString()) }
-                    params.fromBuild?.let { parameters.append("fromBuild", it) }
-                    params.reverse?.let { parameters.append("reverse", it.toString()) }
-                    params.maxBuilds?.let { parameters.append("maxBuilds", it.toString()) }
-                    params.maxWaitSecs?.let { parameters.append("maxWaitSecs", it.toString()) }
-                    params.query?.let { parameters.append("query", it) }
-                    params.models?.let { modelName -> parameters.appendAll("models", modelName.map { it.value }) }
-                    params.allModels?.let { parameters.append("allModels", it.toString()) }
-                }
-            }
-            logResponse(response)
-            if (response.status.isSuccess()) {
-                val builds: List<Build> = response.body()
-                logger.debug("\t${builds.size} build(s) returned")
-                builds.forEach { emit(it) }
-                params.maxBuilds?.let { max ->
-                    if (builds.size == max) {
-                        emitAll(builds(params.copy(fromBuild = builds.last().id), errorHandler))
-                    }
-                }
-            } else {
-                errorHandler.invoke(response)
-            }
-        }
+        val flow = api.buildsApi.getBuildsFlow(
+            fromInstant = params.fromInstant,
+            fromBuild = params.fromBuild,
+            reverse = params.reverse,
+            maxWaitSecs = params.maxWaitSecs,
+            query = params.query,
+            models = params.models,
+            allModels = params.allModels,
+        )
+        params.maxBuilds?.let { maxBuilds ->
+            flow.take(maxBuilds)
+        } ?: flow
     }
 
     override suspend fun <T> build(
         buildId: String,
         params: BuildQuery,
-        errorHandler: (response: HttpResponse) -> Unit,
         transform: (Build) -> T,
     ): T? = withContext(dispatcher) {
-        val response = client.get("$baseUrl/api/builds/$buildId") {
-            url {
-                params.models?.let { modelName -> parameters.appendAll("models", modelName.map { it.value }) }
-                params.allModels?.let { parameters.append("allModels", it.toString()) }
-            }
-        }
-        logResponse(response)
-        return@withContext if (response.status.isSuccess()) {
-            transform.invoke(response.body())
-        } else {
-            errorHandler.invoke(response)
-            null
-        }
-    }
-
-    private fun logResponse(response: HttpResponse) {
-        logger.info(
-            "HTTP {} {} {}",
-            response.request.method.value,
-            response.request.url,
-            response.status
-        )
+        transform.invoke(api.buildsApi.getBuild(
+            id = buildId,
+            models = params.models,
+            allModels = params.allModels,
+        ))
     }
 
     private fun resolveServer(): String {
