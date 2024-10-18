@@ -32,6 +32,9 @@ dependencies {
     implementation(libs.develocityApi)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotlinx.serializationJson)
+
+    testImplementation(libs.test.hamcrest)
+    testImplementation(libs.test.testng)
 }
 
 java {
@@ -48,6 +51,6 @@ project.tasks.withType(KotlinJvmCompile::class.java) {
 }
 
 project.tasks.withType(Test::class.java) {
-    useJUnitPlatform()
+    useTestNG()
 }
 

@@ -5,6 +5,7 @@ import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.EXTENSI
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.QUERY_FILTER_PROPERTY
 import com.ebay.plugins.metrics.develocity.NameUtil.DATETIME_TASK_PATTERN
 import com.ebay.plugins.metrics.develocity.NameUtil.DURATION_TASK_PATTERN
+import com.ebay.plugins.metrics.develocity.configcachemiss.ConfigCacheMissPlugin
 import com.ebay.plugins.metrics.develocity.projectcost.ProjectCostPlugin
 import com.ebay.plugins.metrics.develocity.service.DevelocityBuildService
 import com.ebay.plugins.metrics.develocity.userquery.UserQueryPlugin
@@ -109,6 +110,7 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
         }
 
         // Example summarizers
+        project.plugins.apply(ConfigCacheMissPlugin::class.java)
         project.plugins.apply(ProjectCostPlugin::class.java)
         project.plugins.apply(UserQueryPlugin::class.java)
     }
