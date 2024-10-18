@@ -91,6 +91,7 @@ which use the following forms:
 This plugin ships with two example summarizer implementations which can be used as-is or
 can be used as a reference for how to add custom summarizers.  Please refer to the following
 documentation for more information on their purpose and usage:
+- [Config Cache Miss](src/main/kotlin/com/ebay/plugins/metrics/develocity/configcachemiss/README.md)
 - [Project Cost](src/main/kotlin/com/ebay/plugins/metrics/develocity/projectcost/README.md)
 - [User Query](src/main/kotlin/com/ebay/plugins/metrics/develocity/userquery/README.md)
 
@@ -104,16 +105,16 @@ the plugin:
 
 ### Develocity API
 
-API Manual: https://docs.gradle.com/enterprise/api-manual/
-API Documentation: https://docs.gradle.com/enterprise/api-manual/ref/2022.4.html
+- API Manual: https://docs.gradle.com/enterprise/api-manual/
+- API Documentation: https://docs.gradle.com/enterprise/api-manual/ref/2022.4.html
 
 ### Gabriel Féo's `develocity-api-kotlin` Library
 
 This plugin uses the `develocity-api-kotlin` library to interact with the Develocity API
 rather than generating its own OpenAPI client.
 
-Repository: https://github.com/gabrielfeo/develocity-api-kotlin
-Kotlin API Documentation: https://gabrielfeo.github.io/develocity-api-kotlin/
+- Repository: https://github.com/gabrielfeo/develocity-api-kotlin
+- Kotlin API Documentation: https://gabrielfeo.github.io/develocity-api-kotlin/
 
 ## Licenses
 

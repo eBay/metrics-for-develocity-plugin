@@ -9,12 +9,18 @@ kotlinx-coroutines = "1.8.1"
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinx-serializationJson = "1.6.3"
 
+test-hamcrest = "2.2"
+test-testng = "7.10.2"
+
 [libraries]
 develocityApi = { module = "com.gabrielfeo:develocity-api-kotlin", version.ref = "develocityApi" }
 gradle-develocity = { module = "com.gradle:develocity-gradle-plugin", version.ref = "gradle-develocity" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-serializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serializationJson" }
 pluginLib-ebay-graphAnalytics = { module = "com.ebay.graph-analytics:com.ebay.graph-analytics.gradle.plugin", version.ref = "ebay-graphAnalytics" }
+
+test-hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "test-hamcrest" }
+test-testng = { module = "org.testng:testng", version.ref="test-testng" }
 
 [plugins]
 gradle-pluginPublish = { id = "com.gradle.plugin-publish", version.ref = "gradle-pluginPublish" }
