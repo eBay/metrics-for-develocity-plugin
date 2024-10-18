@@ -11,12 +11,15 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.withContext
+import okhttp3.ConnectionPool
+import okhttp3.OkHttpClient
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.services.BuildService
 import java.net.URI
 import java.util.Properties
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.minutes
 
@@ -44,6 +47,12 @@ abstract class DevelocityBuildService @Inject constructor(
         DevelocityApi.newInstance(Config(
             apiUrl = baseUrl,
             apiToken = ::accessKey,
+            // NOTE: We have to define our own OkHttp client here.  If we don't then it will attempt
+            // to reuse the same client for all service instances, but we explicitly shut down the
+            // client when the service is closed, causing the next build from the configuration cache
+            // to fail.
+            clientBuilder = OkHttpClient.Builder()
+                .connectionPool(ConnectionPool(5, 1, TimeUnit.MINUTES)),
             maxConcurrentRequests = parameters.maxConcurrency.get(),
             logLevel = "debug",
             readTimeoutMillis = 5.minutes.inWholeMilliseconds,
