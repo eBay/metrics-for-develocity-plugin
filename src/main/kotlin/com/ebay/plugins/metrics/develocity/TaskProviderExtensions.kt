@@ -2,34 +2,24 @@
 
 package com.ebay.plugins.metrics.develocity
 
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ALL
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ATTRIBUTE
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.TIME_SPEC_ATTRIBUTE
+import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 
 /**
  * Helper function to configure a task's inputs to use the outputs of of metric summarizer,
  * with the summary data spanning the datetime specified.
  */
-fun TaskProvider<out MetricSummarizerTask>.inputsFromHourly(
+fun TaskProvider<out MetricSummarizerTask>.inputsFromDateTime(
     project: Project,
-    timeSpec: String,
+    dateTimeSpec: String,
     summarizerId: String,
-) {
-    val inputTask = project.internalExt().createHourlyTask(timeSpec)
-    configureInputs(inputTask, summarizerId)
-}
-
-/**
- * Helper function to configure a task's inputs to use the outputs of of metric summarizer,
- * with the summary data spanning the duration specified.
- */
-fun TaskProvider<out MetricSummarizerTask>.inputsFromDaily(
-    project: Project,
-    timeSpec: String,
-    summarizerId: String,
-) {
-    val inputTask = project.internalExt().createDailyTask(timeSpec)
-    configureInputs(inputTask, summarizerId)
-}
+) = configureInputs(project, dateTimeSpec, summarizerId)
 
 /**
  * Helper function to configure a task's inputs to use the outputs of of metric summarizer,
@@ -39,39 +29,43 @@ fun TaskProvider<out MetricSummarizerTask>.inputsFromDuration(
     project: Project,
     durationSpec: String,
     summarizerId: String,
-) {
-    val inputTask = project.internalExt().createDurationTask(durationSpec)
-    configureInputs(inputTask, summarizerId)
-}
-
-/**
- * Get the internal extension for a given project.
- */
-private fun Project.internalExt(): MetricsForDevelocityInternalExtension {
-    /*
-     * NOTE: This is a bit of a project isolation violation.  We could likely avoid this if task
-     * rules applied to programmatically created tasks as well as those created on the command
-     * line.  This works for now...
-     */
-    // TODO: This violates project isolation
-    val ext = project.rootProject.extensions.getByType(MetricsForDevelocityExtension::class.java)
-    return ext.extensions.getByType(MetricsForDevelocityInternalExtension::class.java)
-}
+) = configureInputs(project, durationSpec, summarizerId)
 
 /**
  * Common helper configuration for tasks which consume the summarizer output.
  */
 private fun TaskProvider<out MetricSummarizerTask>.configureInputs(
-    inputTask: TaskProvider<out MetricsIntermediateTask>,
+    project: Project,
+    timeSpec: String,
     summarizerId: String,
 ) {
+    val resolveId = "$name-resolve-$summarizerId"
+    val existingConfig = project.configurations.findByName(resolveId)
+    val configProvider: Provider<Configuration> = if (existingConfig == null) {
+        val resolveConfig = project.configurations.register(resolveId)
+        resolveConfig.configure { config ->
+            with(config) {
+                isTransitive = false
+                isCanBeResolved = true
+                isCanBeConsumed = false
+                attributes.attribute(TIME_SPEC_ATTRIBUTE, timeSpec)
+                attributes.attribute(SUMMARIZER_ATTRIBUTE, SUMMARIZER_ALL)
+                dependencies.add(project.dependencies.project(mapOf("path" to ":")))
+            }
+        }
+        resolveConfig
+    } else {
+        project.provider { existingConfig }
+    }
+
     configure { self ->
         with(self) {
-            dependsOn(inputTask)
-            val inputFileProvider = inputTask.flatMap { aggregateTask ->
-                PathUtil.summarizerFile(aggregateTask.outputDirectoryProperty, summarizerId)
+            dependsOn(configProvider)
+            val summaryFileProvider = configProvider.get().incoming.files.elements.map { files ->
+                files.map { it.asFile }.firstOrNull()?.resolve(summarizerId)
+                    ?: throw GradleException("Could not find summarizer output file '${summarizerId}'")
             }
-            summarizerDataProperty.set(inputFileProvider.map { it.asFile })
+            summarizerDataProperty.set(summaryFileProvider)
         }
     }
 }
