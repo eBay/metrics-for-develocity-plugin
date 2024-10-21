@@ -215,14 +215,14 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
         val requestedTimeSpecs = buildSet {
             // The "auto" property is automatically populated via the settings plugin.
             val extProps = project.extensions.extraProperties
-            //if (extProps.has(SUPPORTED_CONFIGURATION_PROPERTIES_AUTO)) {
+            if (extProps.has(SUPPORTED_CONFIGURATION_PROPERTIES_AUTO)) {
                 addAll(
                     extProps.get(SUPPORTED_CONFIGURATION_PROPERTIES_AUTO)
                         ?.toString()
                         ?.split(",")
                         ?: emptyList()
                 )
-            //}
+            }
             // The "manual" property can be used by the end user for situations where the "auto"
             // property is inadequate.
             addAll(project.providers.gradleProperty(SUPPORTED_CONFIGURATION_PROPERTIES)
