@@ -9,7 +9,7 @@ kotlinx-coroutines = "1.8.1"
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinx-serializationJson = "1.6.3"
 
-test-hamcrest = "2.2"
+test-hamcrest = "3.0"
 test-testng = "7.10.2"
 
 [libraries]
