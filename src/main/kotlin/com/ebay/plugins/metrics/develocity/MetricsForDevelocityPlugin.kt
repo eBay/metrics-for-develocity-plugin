@@ -523,8 +523,4 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
             }
         }
     }
-
-    companion object {
-        internal const val INTERNAL_EXTENSION_NAME = "metricsForDevelocityInternal"
-    }
 }
