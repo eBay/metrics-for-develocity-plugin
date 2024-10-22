@@ -48,7 +48,7 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
     }
 
     private fun applySettings(settings: Settings) {
-        settings.gradle.beforeProject { project ->
+        settings.gradle.lifecycle.beforeProject { project ->
             project.plugins.apply(MetricsForDevelocityPlugin::class.java)
         }
 
