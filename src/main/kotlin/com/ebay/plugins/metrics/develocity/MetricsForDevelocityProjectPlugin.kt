@@ -35,7 +35,7 @@ import javax.inject.Inject
  * generate aggregate metric data based upon Develocity build scans.
  */
 @Suppress("unused") // False positive
-internal class MetricsForDevelocityPlugin @Inject constructor(
+internal class MetricsForDevelocityProjectPlugin @Inject constructor(
     private val providerFactory: ProviderFactory
 ) : Plugin<Any> {
 
@@ -49,7 +49,7 @@ internal class MetricsForDevelocityPlugin @Inject constructor(
 
     private fun applySettings(settings: Settings) {
         settings.gradle.lifecycle.beforeProject { project ->
-            project.plugins.apply(MetricsForDevelocityPlugin::class.java)
+            project.plugins.apply(MetricsForDevelocityProjectPlugin::class.java)
         }
 
         // If we are using the gradle property to configure the develocity URL, pass this
