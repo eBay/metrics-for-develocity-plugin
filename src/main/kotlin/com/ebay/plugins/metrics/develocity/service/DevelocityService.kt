@@ -19,10 +19,8 @@ interface DevelocityService {
     /**
      * Get build details for the build with the given ID.
      */
-    suspend fun <T> build(
+    suspend fun build(
         buildId: String,
         params: BuildQuery,
-        transform: (Build) -> T,
-    ): T?
-
+    ): Build?
 }

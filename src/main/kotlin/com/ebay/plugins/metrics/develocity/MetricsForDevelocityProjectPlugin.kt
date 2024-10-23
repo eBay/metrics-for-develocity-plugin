@@ -60,6 +60,8 @@ internal class MetricsForDevelocityProjectPlugin @Inject constructor(
                 develocityQueryFilter.convention(
                     providerFactory.gradleProperty(QUERY_FILTER_PROPERTY)
                         .orElse("project:${project.name}"))
+
+                buildScanRetrievalTimeout.convention(120)
             }
 
         // Register the build service used to query Develocity for build data
@@ -278,6 +280,7 @@ internal class MetricsForDevelocityProjectPlugin @Inject constructor(
                         queryProperty.set(ext.develocityQueryFilter)
                         summarizersProperty.set(ext.summarizers)
                         develocityServiceProperty.set(buildServiceProvider)
+                        buildScanRetrievalTimeoutProperty.set(ext.buildScanRetrievalTimeout)
                         outputDirectoryProperty.set(PathUtil.hourlyOutputDir(project.layout, timeSpec))
                         maxConcurrencyProperty.set(ext.develocityMaxConcurrency)
                         usesService(buildServiceProvider)

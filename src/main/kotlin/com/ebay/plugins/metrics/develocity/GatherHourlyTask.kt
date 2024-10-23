@@ -10,11 +10,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.model.ObjectFactory
@@ -31,6 +31,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import kotlin.math.roundToInt
@@ -85,11 +86,15 @@ open class GatherHourlyTask @Inject constructor(
     @get:Internal
     override val summarizersProperty: ListProperty<MetricSummarizer<*>> = objectFactory.listProperty(MetricSummarizer::class.java)
 
+    @get:Internal
+    val buildScanRetrievalTimeoutProperty: Property<Int> = objectFactory.property(Int::class.java)
+
     @get:OutputDirectory
     override val outputDirectoryProperty: DirectoryProperty = objectFactory.directoryProperty()
 
     private val refCount = AtomicInteger()
     private val processedCount = AtomicInteger()
+    private val processingBuilds = CopyOnWriteArrayList<String>()
 
     @TaskAction
     fun gather() {
@@ -179,13 +184,21 @@ open class GatherHourlyTask @Inject constructor(
             val detailsQuery = BuildQuery(
                 models = modelsNeeded
             )
-            channel.consumeEach { buildRef ->
-                develocityServiceProperty.get().build(buildRef.id, detailsQuery) { build ->
+            val timeout = buildScanRetrievalTimeoutProperty.get().seconds
+            for (buildRef in channel) {
+                processingBuilds.add(buildRef.id)
+                val build = withTimeoutOrNull(timeout) {
+                    develocityServiceProperty.get().build(buildRef.id, detailsQuery)
+                }
+                if (build == null) {
+                    logger.warn("Unable to process build ${buildRef.id}!  Skipping!")
+                } else {
                     summarizerStates.forEach { state ->
                         state.ingestBuild(build)
                     }
-                    processedCount.incrementAndGet()
                 }
+                processingBuilds.remove(buildRef.id)
+                processedCount.incrementAndGet()
             }
         }
     }
@@ -213,6 +226,18 @@ open class GatherHourlyTask @Inject constructor(
         } else {
             "%.2f / second".format(processedSoFar / elapsedSeconds)
         }
-        logger.info("Processed $processedSoFar build(s) in ${elapsedSeconds.roundToInt()} second(s): $rate")
+        val processingBuilds = processingBuilds.toArray().let { processing ->
+            if (processing.isEmpty()) {
+                ""
+            } else {
+                processing.joinToString(
+                    prefix = " (Processing ${processing.size} build(s): ",
+                    separator = ", ",
+                    postfix = ")"
+                )
+            }
+
+        }
+        logger.info("Processed $processedSoFar build(s) in ${elapsedSeconds.roundToInt()} second(s): $rate $processingBuilds")
     }
 }

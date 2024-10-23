@@ -80,16 +80,15 @@ abstract class DevelocityBuildService @Inject constructor(
         } ?: flow
     }
 
-    override suspend fun <T> build(
+    override suspend fun build(
         buildId: String,
         params: BuildQuery,
-        transform: (Build) -> T,
-    ): T? = withContext(dispatcher) {
-        transform.invoke(api.buildsApi.getBuild(
+    ): Build? = withContext(dispatcher) {
+        api.buildsApi.getBuild(
             id = buildId,
             models = params.models,
             allModels = params.allModels,
-        ))
+        )
     }
 
     private fun resolveServer(): String {
