@@ -22,15 +22,11 @@ import org.gradle.api.initialization.Settings
 internal class MetricsForDevelocitySettingsPlugin : MetricsForDevelocityPlugin<Settings> {
 
     override fun apply(settings: Settings) {
-        settings.gradle.lifecycle.beforeProject { project ->
-            project.plugins.apply(MetricsForDevelocityProjectPlugin::class.java)
-        }
-
         // If we are using the gradle property to configure the develocity URL, pass this
         // info into the tasks that may consume it.  This is used in preference to the
         // value configured by the develocity or gradle enterprise plugins, when applied.
         settings.providers.gradleProperty(DEVELOCITY_SERVER_URL_PROPERTY).orNull?.let { url ->
-            settings.gradle.beforeProject { project ->
+            settings.gradle.lifecycle.beforeProject { project ->
                 project.tasks.withType(DevelocityConfigurationInputs::class.java) { task ->
                     // `set` instead of `convention` since specification by property value should
                     // take precedence over the default value.
@@ -50,8 +46,8 @@ internal class MetricsForDevelocitySettingsPlugin : MetricsForDevelocityPlugin<S
 
             @Suppress("DEPRECATION") // GradleEnterpriseExtension is deprecated
             val gradleExt = settings.extensions.getByType(com.gradle.enterprise.gradleplugin.GradleEnterpriseExtension::class.java)
-            settings.gradle.afterProject { project ->
-                project.plugins.withId("com.ebay.metrics-for-develocity") {
+            settings.gradle.lifecycle.afterProject { project ->
+                project.plugins.withType(MetricsForDevelocityPlugin::class.java) {
                     project.extensions.findByType(MetricsForDevelocityExtension::class.java)?.let { ext ->
                         with(ext) {
                             develocityServerUrl.convention(gradleExt.server)
@@ -68,45 +64,53 @@ internal class MetricsForDevelocitySettingsPlugin : MetricsForDevelocityPlugin<S
         }
         settings.plugins.withId("com.gradle.develocity") {
             val gradleExt = settings.extensions.getByType(DevelocityConfiguration::class.java)
-            settings.gradle.afterProject { project ->
-                project.plugins.withId("com.ebay.metrics-for-develocity") {
+            val server = gradleExt.server
+            val accessKey = gradleExt.accessKey
+
+            settings.gradle.lifecycle.afterProject { project ->
+                project.plugins.withType(MetricsForDevelocityPlugin::class.java) {
                     project.extensions.findByType(MetricsForDevelocityExtension::class.java)?.let { ext ->
                         with(ext) {
-                            develocityServerUrl.convention(gradleExt.server)
-                            develocityAccessKey.convention(gradleExt.accessKey)
+                            develocityServerUrl.convention(server)
+                            develocityAccessKey.convention(accessKey)
                         }
                     }
                 }
                 // Configure tasks wanting to consume the Develocity configuration:
                 project.tasks.withType(DevelocityConfigurationInputs::class.java).configureEach { task ->
                     // `convention` to allow for possible override by the property value
-                    task.develocityServerUrl.convention(gradleExt.server)
+                    task.develocityServerUrl.convention(server)
                 }
             }
         }
 
         // Look for task names that have a datetime or duration suffix and feed those into a property that the
         // plugin can consume in order to pro-actively create the consumable configurations.
-        settings.gradle.lifecycle.beforeProject { project ->
-            if (project.parent == null) {
-                val requestedTimeSpecs = mutableListOf<String>()
-                project.gradle.startParameter.taskRequests.forEach { taskRequest ->
-                    taskRequest.args.forEach { taskName ->
-                        DATETIME_SUFFIX_PATTERN.matchEntire(taskName)?.let { matchResult ->
-                            matchResult.groups[1]?.value?.let {
-                                requestedTimeSpecs.add(it)
-                            }
-                        }
-                        DURATION_SUFFIX_PATTERN.matchEntire(taskName)?.let { matchResult ->
-                            matchResult.groups[1]?.value?.let {
-                                requestedTimeSpecs.add(it)
-                            }
-                        }
+        val requestedTimeSpecs = mutableListOf<String>()
+        settings.gradle.startParameter.taskRequests.forEach { taskRequest ->
+            taskRequest.args.forEach { taskName ->
+                DATETIME_SUFFIX_PATTERN.matchEntire(taskName)?.let { matchResult ->
+                    matchResult.groups[1]?.value?.let {
+                        requestedTimeSpecs.add(it)
                     }
                 }
-                val autoProperties = requestedTimeSpecs.joinToString(separator = ",")
+                DURATION_SUFFIX_PATTERN.matchEntire(taskName)?.let { matchResult ->
+                    matchResult.groups[1]?.value?.let {
+                        requestedTimeSpecs.add(it)
+                    }
+                }
+            }
+        }
+        val autoProperties = requestedTimeSpecs.joinToString(separator = ",")
+        settings.gradle.lifecycle.beforeProject { project ->
+            if (project.parent == null) {
                 project.extensions.extraProperties.set(SUPPORTED_CONFIGURATION_PROPERTIES_AUTO, autoProperties)
             }
+        }
+
+        // Apply the plugin last to ensure that all the beforeProject hooks have already been evaluated
+        settings.gradle.lifecycle.beforeProject { project ->
+            project.plugins.apply(MetricsForDevelocityProjectPlugin::class.java)
         }
     }
 }
