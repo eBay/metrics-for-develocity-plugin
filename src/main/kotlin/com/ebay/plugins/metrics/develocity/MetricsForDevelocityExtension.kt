@@ -43,6 +43,14 @@ abstract class MetricsForDevelocityExtension : ExtensionAware {
     abstract val develocityMaxConcurrency: Property<Int>
 
     /**
+     * The maximum amount of time, in seconds, to wait for an individual build scan to be processed.
+     * If a build scan takes longer than this amount of time, it will be discarded / skipped,
+     * mainly to prevent hanging the entire data collection process.  By default, the timeout
+     * is set to 2 minutes.
+     */
+    abstract val buildScanRetrievalTimeout: Property<Int>
+
+    /**
      * Custom build data summarizers to apply to the build data.  These capture the details
      * of the build that are important to report upon and summarize them in a way that can
      * be aggregated/reduced.

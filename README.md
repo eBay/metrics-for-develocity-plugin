@@ -64,6 +64,11 @@ extensions.configure<MetricsForDevelocityExtension> {
         // when querying build data.  Defaults to 24.
         develocityMaxConcurrency.set(10)
         
+        // Optional: Set the maximum number of seconds to wait for an individual build scan to be
+        // processed before skipping it and proceeding with data retrieval.  This provides some
+        // mitigation if Develocity is slow to return a scan.  Defaults to 120 seconds.
+        buildScanRetrievalTimeout.set(60)
+        
         // Optional: Add custom summarizers to the plugin.  These summarizers will be used to
         // build 
         summarizers.add(MyCustomSummarizer())

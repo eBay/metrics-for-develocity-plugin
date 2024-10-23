@@ -35,7 +35,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import kotlin.math.roundToInt
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -86,6 +85,9 @@ open class GatherHourlyTask @Inject constructor(
 
     @get:Internal
     override val summarizersProperty: ListProperty<MetricSummarizer<*>> = objectFactory.listProperty(MetricSummarizer::class.java)
+
+    @get:Internal
+    val buildScanRetrievalTimeoutProperty: Property<Int> = objectFactory.property(Int::class.java)
 
     @get:OutputDirectory
     override val outputDirectoryProperty: DirectoryProperty = objectFactory.directoryProperty()
@@ -182,9 +184,10 @@ open class GatherHourlyTask @Inject constructor(
             val detailsQuery = BuildQuery(
                 models = modelsNeeded
             )
+            val timeout = buildScanRetrievalTimeoutProperty.get().seconds
             for (buildRef in channel) {
                 processingBuilds.add(buildRef.id)
-                val build = withTimeoutOrNull(2.minutes) {
+                val build = withTimeoutOrNull(timeout) {
                     develocityServiceProperty.get().build(buildRef.id, detailsQuery)
                 }
                 if (build == null) {
