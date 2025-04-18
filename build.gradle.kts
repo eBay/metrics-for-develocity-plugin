@@ -28,11 +28,10 @@ gradlePlugin {
 dependencies {
     api(libs.develocityApi)
 
-    compileOnly(libs.gradle.develocity)
-    compileOnly(libs.pluginLib.ebay.graphAnalytics)
-
+    implementation(libs.gradle.develocity)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotlinx.serializationJson)
+    implementation(libs.pluginLib.ebay.graphAnalytics)
 
     testImplementation(libs.test.hamcrest)
     testImplementation(libs.test.testng)
