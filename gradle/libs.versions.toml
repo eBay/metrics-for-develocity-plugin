@@ -1,5 +1,5 @@
 [versions]
-ebay-graphAnalytics = "1.0.2"
+ebay-graphAnalytics = "1.1.0"
 # https://github.com/gabrielfeo/develocity-api-kotlin
 develocityApi = "2024.3.0"
 # https://plugins.gradle.org/plugin/com.gradle.develocity
