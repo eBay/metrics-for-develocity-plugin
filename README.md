@@ -19,6 +19,9 @@ may be referenced:
 
 The plugin is designed to work with Gradle 8.8 or later.
 
+The older Gradle Enterprise plugin (`com.gradle.enterprise`) is no longer supported.  Please
+upgrade to the replacement Develocity plugin (`com.gradle.develocity`).
+
 ## Usage
 
 To enable the plugin, add the following to your project's `settings.gradle.kts` file:
