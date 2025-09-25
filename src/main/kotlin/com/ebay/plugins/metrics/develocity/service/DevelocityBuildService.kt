@@ -34,9 +34,7 @@ abstract class DevelocityBuildService @Inject constructor(
 ): BuildService<DevelocityBuildServiceParameters>, DevelocityService, AutoCloseable {
     private val serverUrl by lazy { resolveServer() }
 
-    private val accessKey by lazy { resolveAccessKey(serverUrl) }
-
-    private val baseUrl = serverUrl.removeSuffix("/").plus("/api/")
+    private val accessKey by lazy { "${serverUrl}=${resolveAccessKey(serverUrl)}" }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val dispatcher by lazy {
@@ -45,16 +43,11 @@ abstract class DevelocityBuildService @Inject constructor(
 
     private val api by lazy {
         DevelocityApi.newInstance(Config(
-            apiUrl = baseUrl,
-            apiToken = ::accessKey,
-            // NOTE: We have to define our own OkHttp client here.  If we don't then it will attempt
-            // to reuse the same client for all service instances, but we explicitly shut down the
-            // client when the service is closed, causing the next build from the configuration cache
-            // to fail.
+            server = serverUrl,
+            accessKey = ::accessKey,
             clientBuilder = OkHttpClient.Builder()
                 .connectionPool(ConnectionPool(5, 1, TimeUnit.MINUTES)),
             maxConcurrentRequests = parameters.maxConcurrency.get(),
-            logLevel = "debug",
             readTimeoutMillis = 5.minutes.inWholeMilliseconds,
         ))
     }
@@ -91,12 +84,15 @@ abstract class DevelocityBuildService @Inject constructor(
         )
     }
 
-    private fun resolveServer(): String {
-        return parameters.serverUrlProperty.orNull ?: throw GradleException("Develocity server URL must be set")
+    private fun resolveServer(): URI {
+        val value = parameters.serverUrlProperty.orNull ?: throw GradleException("Develocity server URL must be set")
+        return runCatching { URI(value) }.getOrElse { error ->
+            throw GradleException("Develocity server URL must be a valid URL: $value", error)
+        }
     }
 
-    private fun resolveAccessKey(serverUrl: String): String {
-        val host = URI(serverUrl).host
+    private fun resolveAccessKey(serverUrl: URI): String {
+        val host = serverUrl.host
         val token = sequence {
             yield(parameters.accessKeyProperty.orNull)
             yield(getTokenFromEnvVar("DEVELOCITY_ACCESS_KEY", host))
