@@ -35,33 +35,8 @@ internal class MetricsForDevelocitySettingsPlugin : MetricsForDevelocityPlugin<S
             }
         }
 
-        // Auto-configure the Gradle Enterprise access if the plugin is applied and has been
+        // Auto-configure the Develocity access if the plugin is applied and has been
         // directly configured with a server URL and/or access key.
-        settings.plugins.withId("com.gradle.enterprise") {
-            // The Develocity plugin is also registered under this ID so we need to avoid running
-            // this logic when this is the case.
-            if (settings.plugins.hasPlugin("com.gradle.develocity")) {
-                return@withId
-            }
-
-            @Suppress("DEPRECATION") // GradleEnterpriseExtension is deprecated
-            val gradleExt = settings.extensions.getByType(com.gradle.enterprise.gradleplugin.GradleEnterpriseExtension::class.java)
-            settings.gradle.lifecycle.afterProject { project ->
-                project.plugins.withType(MetricsForDevelocityPlugin::class.java) {
-                    project.extensions.findByType(MetricsForDevelocityExtension::class.java)?.let { ext ->
-                        with(ext) {
-                            develocityServerUrl.convention(gradleExt.server)
-                            develocityAccessKey.convention(gradleExt.accessKey)
-                        }
-                    }
-                }
-                // Configure tasks wanting to consume the Gradle Enterprise configuration:
-                project.tasks.withType(DevelocityConfigurationInputs::class.java).configureEach { task ->
-                    // `convention` to allow for possible override by the property value
-                    task.develocityServerUrl.convention(gradleExt.server)
-                }
-            }
-        }
         settings.plugins.withId("com.gradle.develocity") {
             val gradleExt = settings.extensions.getByType(DevelocityConfiguration::class.java)
             val server = gradleExt.server

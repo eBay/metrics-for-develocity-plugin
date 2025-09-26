@@ -3,7 +3,7 @@ ebay-graphAnalytics = "1.1.1"
 # https://github.com/gabrielfeo/develocity-api-kotlin
 develocityApi = "2025.1.1"
 # https://plugins.gradle.org/plugin/com.gradle.develocity
-gradle-develocity = "3.19.2"
+gradle-develocity = "4.2"
 # https://plugins.gradle.org/plugin/com.gradle.plugin-publish
 gradle-pluginPublish = "2.0.0"
 # https://github.com/Kotlin/kotlinx.coroutines/releases
