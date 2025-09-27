@@ -18,7 +18,7 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.services.BuildService
 import java.net.URI
-import java.util.Properties
+import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.minutes
@@ -34,7 +34,7 @@ abstract class DevelocityBuildService @Inject constructor(
 ): BuildService<DevelocityBuildServiceParameters>, DevelocityService, AutoCloseable {
     private val serverUrl by lazy { resolveServer() }
 
-    private val accessKey by lazy { "${serverUrl}=${resolveAccessKey(serverUrl)}" }
+    private val accessKey by lazy { resolveAccessKey(serverUrl) }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val dispatcher by lazy {
@@ -137,7 +137,7 @@ abstract class DevelocityBuildService @Inject constructor(
                 props.load(reader)
             }
 
-            return props.getProperty(host) ?: null
+            return props.getProperty(host)
         }
         return null
     }
