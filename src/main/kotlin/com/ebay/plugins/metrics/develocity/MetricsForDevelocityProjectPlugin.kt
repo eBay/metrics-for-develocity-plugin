@@ -13,6 +13,7 @@ import com.ebay.plugins.metrics.develocity.NameUtil.DURATION_TASK_PATTERN
 import com.ebay.plugins.metrics.develocity.configcachemiss.ConfigCacheMissPlugin
 import com.ebay.plugins.metrics.develocity.projectcost.ProjectCostPlugin
 import com.ebay.plugins.metrics.develocity.service.DevelocityBuildService
+import com.ebay.plugins.metrics.develocity.taskduration.TaskDurationPlugin
 import com.ebay.plugins.metrics.develocity.userquery.UserQueryPlugin
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -44,6 +45,7 @@ internal class MetricsForDevelocityProjectPlugin @Inject constructor(
         // Example summarizers
         project.plugins.apply(ConfigCacheMissPlugin::class.java)
         project.plugins.apply(ProjectCostPlugin::class.java)
+        project.plugins.apply(TaskDurationPlugin::class.java)
         project.plugins.apply(UserQueryPlugin::class.java)
     }
 
@@ -360,11 +362,7 @@ internal class MetricsForDevelocityProjectPlugin @Inject constructor(
                     with(task) {
                         inputTaskProviders.forEach { taskProvider ->
                             sourceOutputDirectories.from(taskProvider.flatMap {
-                                if (it is MetricsIntermediateTask) {
-                                    it.outputDirectoryProperty
-                                } else {
-                                    throw IllegalStateException("Unexpected task type: ${it::class.java}")
-                                }
+                                it.outputDirectoryProperty
                             })
                         }
                         zoneOffset.set(ext.zoneId)

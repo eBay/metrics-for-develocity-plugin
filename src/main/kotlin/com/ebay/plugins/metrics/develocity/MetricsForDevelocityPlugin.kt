@@ -13,4 +13,4 @@ import org.gradle.api.Plugin
  * project.plugins.withType(MetricsForDevelocityPlugin::class.java) { ... }
  * ```
  */
-interface MetricsForDevelocityPlugin<T> : Plugin<T>
+interface MetricsForDevelocityPlugin<T : Any> : Plugin<T>
