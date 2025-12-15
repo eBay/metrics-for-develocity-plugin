@@ -101,6 +101,7 @@ can be used as a reference for how to add custom summarizers.  Please refer to t
 documentation for more information on their purpose and usage:
 - [Config Cache Miss](src/main/kotlin/com/ebay/plugins/metrics/develocity/configcachemiss/README.md)
 - [Project Cost](src/main/kotlin/com/ebay/plugins/metrics/develocity/projectcost/README.md)
+- [Task Duration](src/main/kotlin/com/ebay/plugins/metrics/develocity/taskduration/README.md)
 - [User Query](src/main/kotlin/com/ebay/plugins/metrics/develocity/userquery/README.md)
 
 ## Run Books

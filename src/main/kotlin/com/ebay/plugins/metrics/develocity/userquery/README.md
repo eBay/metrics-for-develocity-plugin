@@ -19,6 +19,11 @@ For example:
 ./gradlew '-PmetricsForDevelocityQueryFilter=tag:Local' userQueryReport-P7D
 ```
 
+Or an example using a more complex filter:
+```shell
+./gradlew gradle -PmetricsForDevelocityQueryFilter='(value:"CI build number=938") and (value:"CI job=gradle/gradle-profiler")' userQueryReport-P7D
+```
+
 Upon completion, the report will be written to a file based on the task name which was run,
 such as:
 ```shell
