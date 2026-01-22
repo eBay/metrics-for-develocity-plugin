@@ -12,7 +12,7 @@ kotlinx-coroutines = "1.8.1"
 kotlinx-serializationJson = "1.6.3"
 
 test-hamcrest = "3.0"
-test-testng = "7.11.0"
+test-testng = "7.12.0"
 
 [libraries]
 develocityApi = { module = "com.gabrielfeo:develocity-api-kotlin", version.ref = "develocityApi" }
