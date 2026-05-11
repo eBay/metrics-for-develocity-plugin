@@ -7,7 +7,7 @@ gradle-develocity = "4.0"
 # https://plugins.gradle.org/plugin/com.gradle.plugin-publish
 gradle-pluginPublish = "2.1.1"
 # https://github.com/Kotlin/kotlinx.coroutines/releases
-kotlinx-coroutines = "1.8.1"
+kotlinx-coroutines = "1.11.0"
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinx-serializationJson = "1.6.3"
 
