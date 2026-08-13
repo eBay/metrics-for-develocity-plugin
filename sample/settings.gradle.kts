@@ -7,6 +7,7 @@ pluginManagement {
 }
 
 plugins {
+    id("com.ebay.graph-analytics") version("1.1.2") // Keep in sync with version catalogs
     id("com.ebay.metrics-for-develocity")
     id("com.gradle.develocity") version("4.5.0")
     id("com.gradle.common-custom-user-data-gradle-plugin") version("2.8.0")
