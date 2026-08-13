@@ -32,10 +32,6 @@ class ProjectCostSummarizer(
         BuildModelName.gradleBuildCachePerformance,
     )
 
-    private val serializer by lazy {
-        ProjectCostSummary.serializer()
-    }
-
     @OptIn(ExperimentalSerializationApi::class) // decodeFromStream
     override fun read(file: File): ProjectCostSummary {
         return if (file.exists()) {
@@ -140,5 +136,7 @@ class ProjectCostSummarizer(
             prettyPrint = true
             prettyPrintIndent = " "
         }
+
+        private val serializer = ProjectCostSummary.serializer()
     }
 }

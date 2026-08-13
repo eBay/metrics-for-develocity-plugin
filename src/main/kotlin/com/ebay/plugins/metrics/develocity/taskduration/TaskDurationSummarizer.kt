@@ -28,18 +28,13 @@ class TaskDurationSummarizer(
 ) : MetricSummarizer<TaskDurationSummary>() {
     override val id = ID
 
-    private val dateHelper by lazy {
-        DateHelper(zoneIdProvider)
-    }
+    private val dateHelper
+        get() = DateHelper(zoneIdProvider)
 
     override val modelsNeeded = setOf(
         BuildModelName.gradleAttributes,
         BuildModelName.gradleBuildCachePerformance,
     )
-
-    private val serializer by lazy {
-        TaskDurationSummary.serializer()
-    }
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun read(file: File): TaskDurationSummary {
@@ -125,5 +120,7 @@ class TaskDurationSummarizer(
             prettyPrint = true
             prettyPrintIndent = " "
         }
+
+        private val serializer = TaskDurationSummary.serializer()
     }
 }
