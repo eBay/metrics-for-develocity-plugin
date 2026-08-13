@@ -18,4 +18,4 @@ jobs:
         run: ./gradlew build
       - name: Build Sample
         working-directory: sample
-        run: ./gradlew build
+        run: ./gradlew -PprojectCostGraphAnalysisDuration=PT1H build projectCostReport-PT1H

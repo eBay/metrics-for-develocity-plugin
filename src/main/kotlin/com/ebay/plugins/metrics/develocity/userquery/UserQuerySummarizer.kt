@@ -25,10 +25,6 @@ class UserQuerySummarizer(
         BuildModelName.gradleAttributes,
     )
 
-    private val serializer by lazy {
-        UserQuerySummary.serializer()
-    }
-
     @OptIn(ExperimentalSerializationApi::class) // decodeFromStream
     override fun read(file: File): UserQuerySummary {
         return if (file.exists()) {
@@ -84,5 +80,7 @@ class UserQuerySummarizer(
             prettyPrint = true
             prettyPrintIndent = " "
         }
+
+        private val serializer = UserQuerySummary.serializer()
     }
 }

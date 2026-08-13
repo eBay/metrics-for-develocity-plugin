@@ -20,10 +20,6 @@ class ConfigCacheMissSummarizer: MetricSummarizer<ConfigCacheMissSummary>() {
         BuildModelName.gradleConfigurationCache,
     )
 
-    private val serializer by lazy {
-        ConfigCacheMissSummary.serializer()
-    }
-
     @OptIn(ExperimentalSerializationApi::class) // decodeFromStream
     override fun read(file: File): ConfigCacheMissSummary {
         return if (file.exists()) {
@@ -74,5 +70,7 @@ class ConfigCacheMissSummarizer: MetricSummarizer<ConfigCacheMissSummary>() {
             prettyPrint = true
             prettyPrintIndent = " "
         }
+
+        private val serializer = ConfigCacheMissSummary.serializer()
     }
 }
