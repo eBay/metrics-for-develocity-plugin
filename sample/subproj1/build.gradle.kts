@@ -13,7 +13,7 @@ java {
 project.tasks.withType(KotlinJvmCompile::class.java) {
     compilerOptions {
         allWarningsAsErrors.set(true)
-        freeCompilerArgs.addAll(listOf("-Xjvm-default=all", "-opt-in=kotlin.RequiresOptIn"))
+        freeCompilerArgs.addAll(listOf("-opt-in=kotlin.RequiresOptIn"))
         jvmTarget.set(JvmTarget.JVM_11)
     }
 }
