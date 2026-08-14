@@ -3,11 +3,13 @@
 package com.ebay.plugins.metrics.develocity
 
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ALL
-import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ATTRIBUTE
-import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.TIME_SPEC_ATTRIBUTE
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.summarizerCapability
+import com.ebay.plugins.metrics.develocity.NameUtil.DATETIME_TASK_PATTERN
+import com.ebay.plugins.metrics.develocity.NameUtil.DURATION_TASK_PATTERN
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 
@@ -39,6 +41,20 @@ private fun TaskProvider<out MetricSummarizerTask>.configureInputs(
     timeSpec: String,
     summarizerId: String,
 ) {
+    // Isolated projects cannot reach another project's extensions. Root is configured
+    // first; subprojects rely on that registration (or settings-plugin pre-creation).
+    if (project.parent == null) {
+        val registered = project.extensions
+            .getByType(MetricsForDevelocityExtension::class.java)
+            .ensureTimeSpecConfiguration(timeSpec)
+        if (!registered) {
+            throw GradleException("Unable to parse time spec: $timeSpec\n" +
+                    "\tSupported patterns:\n" +
+                    "\t\t'${DATETIME_TASK_PATTERN.pattern()}'\n" +
+                    "\t\t'${DURATION_TASK_PATTERN.pattern()}' (group 1 parsed as a Java duration)")
+        }
+    }
+
     val resolveId = "$name-resolve-$summarizerId"
     val existingConfig = project.configurations.findByName(resolveId)
     val configProvider: Provider<Configuration> = if (existingConfig == null) {
@@ -48,9 +64,11 @@ private fun TaskProvider<out MetricSummarizerTask>.configureInputs(
                 isTransitive = false
                 isCanBeResolved = true
                 isCanBeConsumed = false
-                attributes.attribute(TIME_SPEC_ATTRIBUTE, timeSpec)
-                attributes.attribute(SUMMARIZER_ATTRIBUTE, SUMMARIZER_ALL)
-                dependencies.add(project.dependencies.project(mapOf("path" to ":")))
+                val dep = project.dependencies.project(mapOf("path" to ":")) as ModuleDependency
+                dep.capabilities { caps ->
+                    caps.requireCapability(summarizerCapability(timeSpec, SUMMARIZER_ALL))
+                }
+                dependencies.add(dep)
             }
         }
         resolveConfig

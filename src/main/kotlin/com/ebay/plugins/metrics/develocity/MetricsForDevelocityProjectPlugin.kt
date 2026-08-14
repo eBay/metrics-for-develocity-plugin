@@ -4,10 +4,9 @@ import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.DEVELOC
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.EXTENSION_NAME
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.QUERY_FILTER_PROPERTY
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ALL
-import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUMMARIZER_ATTRIBUTE
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUPPORTED_CONFIGURATION_PROPERTIES
 import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.SUPPORTED_CONFIGURATION_PROPERTIES_AUTO
-import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.TIME_SPEC_ATTRIBUTE
+import com.ebay.plugins.metrics.develocity.MetricsForDevelocityConstants.summarizerCapability
 import com.ebay.plugins.metrics.develocity.NameUtil.DATETIME_TASK_PATTERN
 import com.ebay.plugins.metrics.develocity.NameUtil.DURATION_TASK_PATTERN
 import com.ebay.plugins.metrics.develocity.configcachemiss.ConfigCacheMissPlugin
@@ -17,6 +16,9 @@ import com.ebay.plugins.metrics.develocity.taskduration.TaskDurationPlugin
 import com.ebay.plugins.metrics.develocity.userquery.UserQueryPlugin
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.attributes.Category
+import org.gradle.api.capabilities.Capability
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.TaskProvider
 import java.time.Duration
@@ -30,14 +32,12 @@ import javax.inject.Inject
  * Plugin implementation which defines tasks and configurations artifacts which are used to
  * generate aggregate metric data based upon Develocity build scans.
  */
+@Suppress("UnstableApiUsage")
 internal class MetricsForDevelocityProjectPlugin @Inject constructor(
     private val providerFactory: ProviderFactory
 ) : MetricsForDevelocityPlugin<Project> {
 
     override fun apply(project: Project) {
-        project.dependencies.attributesSchema.attribute(SUMMARIZER_ATTRIBUTE)
-        project.dependencies.attributesSchema.attribute(TIME_SPEC_ATTRIBUTE)
-
         if (project.parent == null) {
             applyRootProject(project)
         }
@@ -110,6 +110,11 @@ internal class MetricsForDevelocityProjectPlugin @Inject constructor(
             dateHelper,
             ext,
         )
+
+        // This must be configured prior to the summarizer plugins being added.
+        ext.timeSpecConfigurationRegistrar = { timeSpec ->
+            pluginContext.registerConfigurationTimeSpec(timeSpec)
+        }
 
         // As a workaround, pre-register configurations based upon a comma-delimited list of
         // time specifications provided via gradle properties.
@@ -205,11 +210,14 @@ internal class MetricsForDevelocityProjectPlugin @Inject constructor(
         val date = matcher.group(2)
         val hour: String? = matcher.group(3)
 
+        if (project.configurations.names.contains(configurationName)) {
+            return true
+        }
+
         project.configurations.consumable(configurationName) { config ->
             with(config) {
                 isTransitive = false
-                attributes.attribute(TIME_SPEC_ATTRIBUTE, timeSpec)
-                attributes.attribute(SUMMARIZER_ATTRIBUTE, SUMMARIZER_ALL)
+                addSummarizerOutgoingCapabilities(project, timeSpec)
             }
         }
 
@@ -233,6 +241,10 @@ internal class MetricsForDevelocityProjectPlugin @Inject constructor(
 
         val durationStr: String = matcher.group(1)
 
+        if (project.configurations.names.contains(configurationName)) {
+            return true
+        }
+
         // Attempt to parse the duration string to ensure it is valid, prior to configuration
         // registration.
         val taskProvider = runCatching {
@@ -242,12 +254,32 @@ internal class MetricsForDevelocityProjectPlugin @Inject constructor(
         project.configurations.consumable(configurationName) { config ->
             with(config) {
                 isTransitive = false
-                attributes.attribute(TIME_SPEC_ATTRIBUTE, durationStr)
-                attributes.attribute(SUMMARIZER_ATTRIBUTE, SUMMARIZER_ALL)
+                addSummarizerOutgoingCapabilities(project, durationStr)
             }
         }
         project.artifacts.add(configurationName, taskProvider)
         return true
+    }
+
+    /**
+     * Declaring any outgoing capability replaces the implicit project GAV; re-declare it so
+     * this remains a selectable variant of `project(":")`.  String/map notation cannot express
+     * an empty project group, so the implicit capability is provided as a [Capability].
+     *
+     * A [Category] attribute is also required: Gradle does not consider configurations
+     * without attributes during variant-aware resolution.
+     */
+    private fun Configuration.addSummarizerOutgoingCapabilities(project: Project, timeSpec: String) {
+        attributes.attribute(
+            Category.CATEGORY_ATTRIBUTE,
+            project.objects.named(Category::class.java, SUMMARIZER_CATEGORY)
+        )
+        outgoing.capability(object : Capability {
+            override fun getGroup(): String = project.group.toString()
+            override fun getName(): String = project.name
+            override fun getVersion(): String = project.version.toString()
+        })
+        outgoing.capability(summarizerCapability(timeSpec, SUMMARIZER_ALL))
     }
 
     /*
@@ -420,5 +452,9 @@ internal class MetricsForDevelocityProjectPlugin @Inject constructor(
                 }
             }
         }
+    }
+
+    private companion object {
+        const val SUMMARIZER_CATEGORY = "metrics-for-develocity-summarizer"
     }
 }

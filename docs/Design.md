@@ -74,13 +74,26 @@ summarizer's output of the data gathering task to a consuming project's
 ### Advanced task wiring
 
 For more advanced use cases where the provided extensions are inadequate, the consuming
-project can create a resolvable Gradle `Configuration` to refer to the root project's
-`Configuration` by name and attribute configuration.  When this approach is used, the resolvable
-`Configuration` should specify the following attributes:
-- [SUMMARIZER_ATTRIBUTE](../src/main/kotlin/com/ebay/plugins/metrics/develocity/MetricsForDevelocityConstants.kt)
-  with a value of [SUMMARIZER_ALL], which will result in a directory of all summarizer outputs.
-- [TIME_SPEC_ATTRIBUTE](../src/main/kotlin/com/ebay/plugins/metrics/develocity/MetricsForDevelocityConstants.kt)
-  with a value of the datetime or duration specification (e.g., `2024-10-21` or `P7D`)
+project can create a resolvable Gradle `Configuration` that depends on the root project and
+requires the matching summarizer capability.
+
+Producer configurations declare the capability via `outgoing.capability(...)`; consumers
+constrain the project dependency with `requireCapability(...)`. Use
+[summarizerCapability](../src/main/kotlin/com/ebay/plugins/metrics/develocity/MetricsForDevelocityConstants.kt)
+to build the notation.
+
+Producer configurations must also re-declare the project's implicit GAV capability, because
+declaring any `outgoing.capability` replaces it.
+
+For all summarizer outputs, pass
+[SUMMARIZER_ALL](../src/main/kotlin/com/ebay/plugins/metrics/develocity/MetricsForDevelocityConstants.kt)
+and the datetime or duration specification (e.g., `2024-10-21` or `P7D`).
+
+The intended consumable configuration on the root project must be registered at configuration
+time (see Pre-created `Configuration`s above and gradle#30831).
+Capabilities prevent matching unrelated variants; they do not create a missing producer configuration.
+The producer configuration also declares a `Category` attribute so Gradle will consider it
+during variant-aware resolution (configurations with no attributes are skipped).
 
 At this point, the summarizer output file would ideally be selected via an artifact transform
 provided by this plugin.  Unfortunately, the Gradle API for this is not quite workable at this
