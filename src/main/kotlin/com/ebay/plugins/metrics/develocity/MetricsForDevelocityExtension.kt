@@ -1,5 +1,6 @@
 package com.ebay.plugins.metrics.develocity
 
+import org.gradle.api.GradleException
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -56,4 +57,23 @@ abstract class MetricsForDevelocityExtension : ExtensionAware {
      * be aggregated/reduced.
      */
     abstract val summarizers: ListProperty<MetricSummarizer<*>>
+
+    /**
+     * Installed by the project plugin to eagerly register a consumable configuration for a
+     * time spec.  Required so variant resolution can see the producer (gradle#30831).
+     */
+    internal var timeSpecConfigurationRegistrar: ((String) -> Boolean)? = null
+
+    /**
+     * Ensures the root project has a consumable configuration for the given datetime or
+     * duration specification.  Returns `false` if the time spec cannot be parsed.
+     */
+    internal fun ensureTimeSpecConfiguration(timeSpec: String): Boolean {
+        val registrar = timeSpecConfigurationRegistrar
+            ?: throw GradleException(
+                "Cannot register metrics-for-develocity configuration; the plugin has not " +
+                        "been applied to the root project."
+            )
+        return registrar(timeSpec)
+    }
 }

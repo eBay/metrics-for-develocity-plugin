@@ -37,6 +37,7 @@ dependencies {
 
     testImplementation(libs.test.hamcrest)
     testImplementation(libs.test.testng)
+    testImplementation(gradleTestKit())
 }
 
 java {

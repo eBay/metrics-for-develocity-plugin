@@ -18,7 +18,7 @@ import org.gradle.api.initialization.Settings
  * - Scans requested task names for time specifications and passes the gathered information
  *   to the project plugin.
  */
-@Suppress("unused") // false positive
+@Suppress("unused", "UnstableApiUsage") // unused is a false positive
 internal class MetricsForDevelocitySettingsPlugin : MetricsForDevelocityPlugin<Settings> {
 
     override fun apply(settings: Settings) {
