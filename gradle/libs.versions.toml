@@ -5,7 +5,7 @@ develocityApi = "2026.1.0"
 # https://plugins.gradle.org/plugin/com.gradle.develocity
 gradle-develocity = "4.0"
 # https://plugins.gradle.org/plugin/com.gradle.plugin-publish
-gradle-pluginPublish = "2.1.1"
+gradle-pluginPublish = "2.2.1"
 # https://github.com/Kotlin/kotlinx.coroutines/releases
 kotlinx-coroutines = "1.8.1"
 # https://github.com/Kotlin/kotlinx.serialization/releases
